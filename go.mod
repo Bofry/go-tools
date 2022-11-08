@@ -3,6 +3,7 @@ module github.com/Bofry/go-tools
 go 1.14
 
 require (
-	golang.org/x/mod v0.4.2
-	golang.org/x/tools v0.1.0
+	github.com/Bofry/arg v0.2.0-alpha.20221107170932
+	golang.org/x/mod v0.6.0
+	golang.org/x/tools v0.2.0
 )
