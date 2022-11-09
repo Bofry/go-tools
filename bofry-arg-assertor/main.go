@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/importer"
@@ -37,8 +38,16 @@ type (
 	}
 )
 
+func init() {
+	flag.StringVar(&gofile, "path", "", "the argv source file")
+}
+
 func main() {
 	var err error
+
+	flag.Parse()
+
+	fmt.Println(gofile)
 
 	if gofile == "" {
 		gofile = os.Getenv("GOFILE")
