@@ -1,5 +1,5 @@
-github.com/Bofry/arg v0.2.0-alpha.20221107170932 h1:xXmkxAW48JKViwQztXi7hVzG1c31cyI+486Q8NYg0nY=
-github.com/Bofry/arg v0.2.0-alpha.20221107170932/go.mod h1:VQjJ1QLyjlq5RNxeDszIS9oTh861mqBuR8/5vSWOLWc=
+github.com/Bofry/arg v0.2.0-alpha.20221111030208 h1:K8oecwLkaMe1+Bm+IuNFKz0XfF8nXfr7jwfTRJaycdw=
+github.com/Bofry/arg v0.2.0-alpha.20221111030208/go.mod h1:VQjJ1QLyjlq5RNxeDszIS9oTh861mqBuR8/5vSWOLWc=
 github.com/cstockton/go-conv v1.0.0 h1:zj/q/0MpQ/97XfiC9glWiohO8lhgR4TTnHYZifLTv6I=
 github.com/cstockton/go-conv v1.0.0/go.mod h1:HuiHkkRgOA0IoBNPC7ysG7kNpjDYlgM7Kj62yQPxjy4=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

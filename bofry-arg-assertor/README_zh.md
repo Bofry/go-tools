@@ -84,14 +84,14 @@ gen-arg-assertor
         }
         ```
 4. golang 型別與支援的 **arg.ValueAssertion** 類型 
-   | arg.ValueAssertion   | golang types |
+   | arg.ValueAssertion   | golang 型別 |
    |:---------------------|:-------------|
    | --                   | `bool`
    | **StringAssertion**  | `string`
    | **IntAssertion**     | `int` `int8` `int16` `int32` `int64`
-   | **ValueAssertion**   | `uint` `uint8` `uint16` `uint32` `uint64`
+   | **UIntAssertion**    | `uint` `uint8` `uint16` `uint32` `uint64`
    | **FloatAssertion**   | `float32` `float64`
    | **IPAssertion**      | `net.IP` -or- `arg.IP`
    | **NumberAssertion**  | `encoding/json.Number` -or- `arg.Number`
-   | **ValueAssertion**   | *all types except above*
+   | **ValueAssertion**   | *除上面列出的所有型別*
 
