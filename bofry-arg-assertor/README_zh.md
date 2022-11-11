@@ -53,7 +53,7 @@ type ProtagonistArgv struct {
     ```
     > 📝 **ProtagonistArgvAssertor** 會產生一組方法，提供 **ProtagonistArgv** 驗證操作。其方法名稱即 **ProtagonistArgv** 的欄位名稱。
     >
-    > 🐾 參數型別與 arg.ValueAssertion 的型別對照表參考：[golang* 型別與支援的 *arg.ValueAssertion* 類型](#golang_vs_arg.ValueAssertion)。
+    > 🐾 參數型別與 arg.ValueAssertion 的型別對照表參考：[*golang* 型別與支援的 *arg.ValueAssertion* 類型](#golang_vs_arg.ValueAssertion)。
 
 ## **技術規格**
 1. **來源檔案**：
