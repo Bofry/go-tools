@@ -1,4 +1,4 @@
-gen-arg-assertor
+bofry-arg-assertor
 ================
 針對指定的參數型別自動產生 Assertor 並為參數型別提供合適的驗證操作指令。
 
