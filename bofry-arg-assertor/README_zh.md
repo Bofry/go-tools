@@ -1,6 +1,4 @@
-<div style="text-align: right">
-<a href="README.md">EN</a>
-</div>
+[EN](README.md)
 
 bofry-arg-assertor
 ================

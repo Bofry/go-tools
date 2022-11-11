@@ -1,12 +1,10 @@
-<div style="text-align: right">
-<a href="README_zh.md">ZH</a>
-</div>
+[ZH](README_zh.md)
 
 bofry-arg-assertor
 ================
 A tool based on package [github.com/Bofry/arg](https://github.com/Bofry/arg) to generate soure code for given files.
 
-## Usage
+## **Usage**
 ⠿ Copy the following sample code and save as file named **protagonistArgv.go**. The sample provides a type **ProtagonistArgv** that we will explain how to generate a **ProtagonistArgvAssertor** type and **ProtagonistArgvAssertor_gen.go** file with the tool. And how to compose validating codes under **ProtagonistArgv**.
 ```go
 // protagonistArgv.go
