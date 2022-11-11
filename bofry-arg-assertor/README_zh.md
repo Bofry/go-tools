@@ -1,6 +1,6 @@
 bofry-arg-assertor
 ================
-針對指定的參數型別自動產生 Assertor 並為參數型別提供合適的驗證操作指令。
+提供基於 [github.com/Bofry/arg](https://github.com/Bofry/arg) 套件產生參數驗證的程式碼工具。
 
 ## **使用方式**
 ⠿ 複製下面提供的程式碼，並保存到 **protagonistArgv.go** 檔案。樣本提供要製作使用的 **ProtagonistArgv** 型別，稍後介紹如何使用工具產生 **ProtagonistArgvAssertor** 型別於 **ProtagonistArgvAssertor_gen.go** 檔案，以及如何在 **ProtagonistArgv** 撰寫驗證。
