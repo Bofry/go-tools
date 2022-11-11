@@ -3,29 +3,31 @@ bofry-arg-assertor
 針對指定的參數型別自動產生 Assertor 並為參數型別提供合適的驗證操作指令。
 
 ## **使用方式**
-- **步驟一**： 準備要製作 Assertor 的 Argv 型別，此處樣本提供 protagonistArgv.go 檔案，並包含要製作使用的 ProtagonistArgv 型別，其內容如下：
-    ```go
-    // protagonistArgv.go
-    package test
+⠿ 複製下面提供的程式碼，並保存到 **protagonistArgv.go** 檔案。樣本提供要製作使用的 **ProtagonistArgv** 型別，稍後介紹如何使用工具產生 **ProtagonistArgvAssertor** 型別於 **ProtagonistArgvAssertor_gen.go** 檔案，以及如何在 **ProtagonistArgv** 撰寫驗證。
+```go
+// protagonistArgv.go
+package test
 
-    type ProtagonistArgv struct {
-        Name   string   `json:"id"`
-        Age    int      `json:"age"`
-    }
-    ```
-- **步驟二**： 修改型別的定義，加入標籤指示標記內容 `/* tag=json */` 到型別名稱與型別定義之間，如下所示：
+type ProtagonistArgv struct {
+    Name   string   `json:"id"`
+    Age    int      `json:"age"`
+}
+```
+
+### **操作步驟**：
+- **步驟一**： 修改型別的定義，加入標籤指示標記內容 `/* tag=json */` 到型別名稱與型別定義之間，如下所示：
     ```go
     type ProtagonistArgv struct /* tag=json */ {
         Name   string   `json:"id"`
         Age    int      `json:"age"`
     }
     ```
-- **步驟三**： 在終端機使用下面的命令。產生 Assertor 的型別與原始碼檔案。
+- **步驟二**： 在終端機使用下面的命令。產生 Assertor 的型別與原始碼檔案。
     ```bash
     $ bofry-arg-assertor -path protagonistArgv.go
     ```
     📝 將會產生一個 protagonistArgvAssertor_gen.go 的檔案。
-- **步驟四**： 步驟三完成後，我們可以在 protagonistArgv.go 中使用 Assertor 的功能驗證參數。使用前需先匯入套件引用指示 `"github.com/Bofry/arg"`，同時建立要驗證的方法函式如下：
+- **步驟三**： 步驟三完成後，我們可以在 protagonistArgv.go 中使用 Assertor 的功能驗證參數。使用前需先匯入套件引用指示 `"github.com/Bofry/arg"`，同時建立要驗證的方法函式如下：
     ```go
     import (
         "github.com/Bofry/arg"
@@ -83,7 +85,7 @@ bofry-arg-assertor
             ID  string  `json:"id"   query:"_id"   ^:"json"`
         }
         ```
-4. golang 型別與支援的 **arg.ValueAssertion** 類型 
+4. ***golang* 型別與支援的 *arg.ValueAssertion* 類型** 
    | arg.ValueAssertion   | golang 型別 |
    |:---------------------|:-------------|
    | --                   | `bool`
