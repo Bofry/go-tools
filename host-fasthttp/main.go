@@ -1,140 +1,84 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
+	"text/template"
 
 	"golang.org/x/mod/modfile"
 )
 
-const (
-	DIR_CONF = ".conf"
-
-	FILE_ENV          = ".env"
-	FILE_ENV_TEMPLATE = `Environment=local`
-
-	FILE_ENV_SAMPLE          = ".env.sample"
-	FILE_ENV_SAMPLE_TEMPLATE = `Environment=local`
-
-	FILE_GITIGNORE          = ".gitignore"
-	FILE_GITIGNORE_TEMPLATE = `.vscode
-.env
-
-.VERSION
-
-# local environment shell script
-env.bat
-env.sh
-env.*.bat
-env.*.sh
-`
-
-	FILE_CONFIG_LOCAL_YAML          = "config.local.yaml"
-	FILE_CONFIG_LOCAL_YAML_TEMPLATE = `address: ":10074"
-`
-
-	FILE_CONFIG_YAML          = "config.yaml"
-	FILE_CONFIG_YAML_TEMPLATE = `address: ":80"
-serverName: WebAPI
-useCompress: true
-`
-
-	FILE_APP_CONTEXT_GO          = "internal/appContext.go"
-	FILE_APP_CONTEXT_GO_TEMPLATE = `package internal
-
-import fasthttp "github.com/Bofry/host-fasthttp"
-
-type (
-	AppContext struct {
-		Host            *Host
-		Config          *Config
-		ServiceProvider *ServiceProvider
-	}
-
-	Host fasthttp.Host
-
-	Config struct {
-		// host-fasthttp server configuration
-		ListenAddress  string ”yaml:"address"        arg:"address;the combination of IP address and listen port"”
-		EnableCompress bool   ”yaml:"useCompress"    arg:"use-compress;indicates the response enable compress or not"”
-		ServerName     string ”yaml:"serverName"”
-		Version        string ”resource:".VERSION"”
-
-		// put your configuration below
-	}
-
-	ServiceProvider struct {}
-)
-
-func (h *Host) Init(conf *Config) {
-	h.Server = &fasthttp.Server{
-		Name:                          conf.ServerName,
-		DisableKeepalive:              true,
-		DisableHeaderNamesNormalizing: true,
-	}
-	h.ListenAddress = conf.ListenAddress
-	h.EnableCompress = conf.EnableCompress
-	h.Version = conf.Version
-}
-
-
-func (p *ServiceProvider) Init(conf *Config) {
-	// initialize service provider components
-}
-`
-
-	FILE_APP_GO          = "app.go"
-	FILE_APP_GO_TEMPLATE = `package main
-
-import (
-	. "%[1]s/internal"
-
-	"github.com/Bofry/config"
-	fasthttp "github.com/Bofry/host-fasthttp"
-)
-
-//go:generate gen-host-fasthttp-resource
-type ResourceManager struct {}
-
-func main() {
-	ctx := AppContext{}
-	fasthttp.Startup(&ctx).
-		Middlewares(
-			fasthttp.UseResourceManager(&ResourceManager{}),
-			fasthttp.UseXHttpMethodHeader(),
-		).
-		ConfigureConfiguration(func(service *config.ConfigurationService) {
-			service.
-				LoadYamlFile("config.yaml").
-				LoadYamlFile("config.${Environment}.yaml").
-				LoadEnvironmentVariables("").
-				LoadResource(".").
-				LoadResource(".conf/${Environment}").
-				LoadCommandArguments()
-		}).
-		Run()
-}
-`
-)
-
 var (
 	modulePath string = ""
+
+	__FILE_TEMPLATES = map[string]string{
+		FILE_APP_GO:                       strings.ReplaceAll(FILE_APP_GO_TEMPLATE, "”", "`"),
+		FILE_INTERNAL_DEF_GO:              strings.ReplaceAll(FILE_INTERNAL_DEF_GO_TEMPLATE, "”", "`"),
+		FILE_INTERNAL_APP_GO:              FILE_INTERNAL_APP_GO_TEMPLATE,
+		FILE_INTERNAL_SERVICE_PROVIDER_GO: FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE,
+		FILE_CONFIG_YAML:                  FILE_CONFIG_YAML_TEMPLATE,
+		FILE_CONFIG_LOCAL_YAML:            FILE_CONFIG_LOCAL_YAML_TEMPLATE,
+		FILE_GITIGNORE:                    FILE_GITIGNORE_TEMPLATE,
+		FILE_ENV:                          FILE_ENV_TEMPLATE,
+		FILE_ENV_SAMPLE:                   FILE_ENV_SAMPLE_TEMPLATE,
+		FILE_DOCKERFILE:                   FILE_DOCKERFILE_TEMPLATE,
+	}
 )
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) < 2 {
 		showUsage()
 		os.Exit(0)
 	}
 
-	arg := os.Args[1]
-	switch arg {
+	argv := os.Args[1]
+	switch argv {
 	case "init":
-		initProject()
+		var (
+			moduleName string
+
+			err error
+		)
+		if len(os.Args) > 2 {
+			moduleName = os.Args[2]
+			if err = initModule(moduleName); err != nil {
+				throw(err.Error())
+				os.Exit(1)
+			}
+			if len(os.Args) > 3 {
+				v := os.Args[3]
+				switch v {
+				case "-v":
+					if len(os.Args) > 4 {
+						// run go get -u -v github.com/Bofry/host-fasthttp@05e18b1
+						v = os.Args[4]
+						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+v)
+						if err != nil {
+							throw(err.Error())
+							os.Exit(1)
+						}
+					}
+				}
+			}
+		} else {
+			moduleName, err = getModuleName()
+			if err != nil {
+				throw(err.Error())
+				os.Exit(1)
+			}
+		}
+
+		metadata := AppMetadata{
+			ModuleName: moduleName,
+			AppExeName: extractAppExeName(moduleName),
+		}
+		initProject(&metadata)
 	case "help":
 		showUsage()
 	}
@@ -154,40 +98,61 @@ func throw(err string) {
 }
 
 func showUsage() {
-	fmt.Print(`Usage: http-fasthttp [command]
+	fmt.Print(`Usage: http-fasthttp COMMAND
 
 init        create new host-fasthttp project
 help        show this usage
+
+COMMAND init:
+http-fasthttp init [MODULE NAME] [OPTIONS...]
+
+OPTIONS:
+  -v VERSION
 `)
 }
 
-func initProject() {
-	modulePath, err := getModulePath()
-	if err != nil {
-		throw(err.Error())
-		os.Exit(1)
-	}
+func executeCommand(name string, args ...string) error {
+	cmd := exec.Command(name, args...)
+	cmd.Stdin = os.Stdin
 
-	err = do(
-		generateFile(FILE_APP_GO, FILE_APP_GO_TEMPLATE, modulePath),
-		generateFile(FILE_APP_CONTEXT_GO, FILE_APP_CONTEXT_GO_TEMPLATE),
-		generateFile(FILE_CONFIG_YAML, FILE_CONFIG_YAML_TEMPLATE),
-		generateFile(FILE_CONFIG_LOCAL_YAML, FILE_CONFIG_LOCAL_YAML_TEMPLATE),
-		generateFile(FILE_GITIGNORE, FILE_GITIGNORE_TEMPLATE),
-		generateFile(FILE_ENV, FILE_ENV_TEMPLATE),
-		generateFile(FILE_ENV_SAMPLE, FILE_ENV_SAMPLE_TEMPLATE),
+	var (
+		stdout io.ReadCloser
+		stderr io.ReadCloser
+
+		err error
+	)
+
+	if stdout, err = cmd.StdoutPipe(); err != nil {
+		return err
+	}
+	if stderr, err = cmd.StderrPipe(); err != nil {
+		return err
+	}
+	reader := io.MultiReader(stdout, stderr)
+	scanner := bufio.NewScanner(reader)
+	go func() {
+		for scanner.Scan() {
+			fmt.Println(scanner.Text())
+		}
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return err
+	}
+	return cmd.Wait()
+}
+
+func initModule(name string) error {
+	return executeCommand("go", "mod", "init", name)
+}
+
+func initProject(metadata *AppMetadata) {
+	err := do(
+		generateFiles(metadata),
 		generateDir(DIR_CONF),
+		executeCommand("go", "mod", "tidy"),
 	)
 	if err != nil {
-		throw(err.Error())
-		os.Exit(1)
-	}
-
-	cmd := exec.Command("go", "mod", "tidy")
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
 		throw(err.Error())
 		os.Exit(1)
 	}
@@ -202,7 +167,16 @@ func generateDir(dir string) error {
 	return err
 }
 
-func generateFile(filename string, template string, a ...interface{}) error {
+func generateFiles(metadata *AppMetadata) error {
+	for filename, template := range __FILE_TEMPLATES {
+		if err := generateFile(filename, template, metadata); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func generateFile(filename string, pattern string, metadata *AppMetadata) error {
 	fmt.Printf("generating '%s' ...", filename)
 
 	dir, _ := path.Split(filename)
@@ -218,8 +192,12 @@ func generateFile(filename string, template string, a ...interface{}) error {
 			return err
 		}
 
-		template = strings.ReplaceAll(template, "”", "`")
-		_, err = fmt.Fprintf(file, template, a...)
+		tmpl, err := template.New(filename).Parse(pattern)
+		if err != nil {
+			return err
+		}
+
+		err = tmpl.Execute(file, metadata)
 		if err == nil {
 			fmt.Println("ok")
 		} else {
@@ -232,7 +210,7 @@ func generateFile(filename string, template string, a ...interface{}) error {
 	return nil
 }
 
-func getModulePath() (string, error) {
+func getModuleName() (string, error) {
 	goModBytes, err := ioutil.ReadFile("go.mod")
 	if err != nil {
 		return "", err
@@ -241,4 +219,12 @@ func getModulePath() (string, error) {
 	modName := modfile.ModulePath(goModBytes)
 
 	return modName, nil
+}
+
+func extractAppExeName(moduleName string) string {
+	index := strings.LastIndex(moduleName, "/")
+	if index != -1 {
+		return moduleName[index+1:]
+	}
+	return moduleName
 }
