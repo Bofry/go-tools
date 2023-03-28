@@ -15,8 +15,6 @@ import (
 )
 
 var (
-	modulePath string = ""
-
 	__FILE_TEMPLATES = map[string]string{
 		FILE_APP_GO:                       strings.ReplaceAll(FILE_APP_GO_TEMPLATE, "”", "`"),
 		FILE_INTERNAL_DEF_GO:              strings.ReplaceAll(FILE_INTERNAL_DEF_GO_TEMPLATE, "”", "`"),
@@ -188,6 +186,8 @@ func generateFile(filename string, pattern string, metadata *AppMetadata) error 
 
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		file, err := os.Create(filename)
+		defer file.Close()
+
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func generateFile(filename string, pattern string, metadata *AppMetadata) error 
 		}
 		return err
 	} else {
-		fmt.Println("skip")
+		fmt.Println("skipped")
 	}
 	return nil
 }

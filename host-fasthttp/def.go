@@ -244,7 +244,7 @@ import (
 	"github.com/Bofry/host-fasthttp/response/failure"
 )
 
-//go:generate gen-host-fasthttp-handler
+//go:generate gen-host-fasthttp-request
 type RequestManager struct {
 	/* put your request handler here */
 	// *HealthCheckRequest ”url:"/healthcheck"”
