@@ -26,7 +26,7 @@ $~$
 ```
 host-fasthttp COMMAND [ARGS...] [OPTIONS...]
 ```
-
+The host-fasthttp commands:
   - `init` : create new host-fasthttp project.
     > **usage:**
     > ```
