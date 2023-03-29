@@ -98,20 +98,24 @@ func throw(err string) {
 }
 
 func showUsage() {
-	fmt.Print(`Usage: http-fasthttp COMMAND
+	fmt.Print(`Usage: http-fasthttp COMMAND [ARGS...] [OPTIONS...]
 
-init        create new host-fasthttp project
-help        show this usage
+COMMANDS:
+  init        create new host-fasthttp project
+  help        show this usage
 
-COMMAND init:
-http-fasthttp init [MODULE NAME] [OPTIONS...]
 
-OPTIONS:
-  -v VERSION
+init USAGE:
+  http-fasthttp init [MODULE_NAME] [OPTIONS...]
 
-NOTE:
-  The [MODULE NAME] can use "." period symbol to apply
-  current working directory.
+init ARGS:
+  MODULE_NAME   the go module name for the application.
+                NOTE: The [MODULE_NAME] can use "." period symbol
+				      to apply current working directory name.
+
+init OPTIONS:
+  -v VERSION    the host-fasthttp version.
+
 `)
 }
 
