@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -45,7 +46,8 @@ func main() {
 		)
 		if len(os.Args) > 2 {
 			moduleName = os.Args[2]
-			if err = initModule(moduleName); err != nil {
+			moduleName, err = initModule(moduleName)
+			if err != nil {
 				throw(err.Error())
 				os.Exit(1)
 			}
@@ -106,6 +108,10 @@ http-fasthttp init [MODULE NAME] [OPTIONS...]
 
 OPTIONS:
   -v VERSION
+
+NOTE:
+  The [MODULE NAME] can use "." period symbol to apply
+  current working directory.
 `)
 }
 
@@ -140,8 +146,21 @@ func executeCommand(name string, args ...string) error {
 	return cmd.Wait()
 }
 
-func initModule(name string) error {
-	return executeCommand("go", "mod", "init", name)
+func initModule(name string) (moduleName string, err error) {
+	moduleName = name
+
+	// NOTE: if module name is ".", use the current working
+	//  directory instead.
+	if name == "." {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return moduleName, err
+		}
+
+		moduleName = filepath.Base(cwd)
+		moduleName = strings.ToLower(moduleName)
+	}
+	return moduleName, executeCommand("go", "mod", "init", moduleName)
 }
 
 func initProject(metadata *AppMetadata) {
