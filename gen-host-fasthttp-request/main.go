@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -35,6 +36,8 @@ func main() {
 	var (
 		err error
 	)
+
+	flag.StringVar(&gofile, "file", "", "input file")
 
 	if gofile == "" {
 		gofile = os.Getenv("GOFILE")
