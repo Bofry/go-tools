@@ -165,6 +165,7 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 			if err != nil {
 				if os.IsExist(err) {
 					fmt.Println("skipped")
+					continue
 				} else {
 					return count, err
 				}
@@ -222,15 +223,15 @@ func resolveRequestFileName(typename string) string {
 
 func createRequestFile(filename, typename string, handlerDir string) (*os.File, error) {
 	path := filepath.Join(handlerDir, filename+".go")
-	return os.Create(path)
-	// if _, err := os.Stat(path); os.IsNotExist(err) {
-	// 	file, err := os.Create(path)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	return file, nil
-	// }
-	// return nil, nil
+
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return os.Create(path)
+		}
+		return nil, err
+	}
+	return nil, os.ErrExist
 }
 
 func writeResouceContent(file *os.File, typename string) error {
