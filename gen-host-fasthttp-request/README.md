@@ -17,7 +17,7 @@ A tool based on package [github.com/Bofry/host-fasthttp](https://github.com/Bofr
     $ gen-host-fasthttp-request
     ```
 
-⠿ Generating *xxxRequest.go* without `go:generate` directive.
+⠿ Generating *xxxRequest.go* specified target go file.
 
   - Step 1: The demo go file.
     ```go
