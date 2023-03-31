@@ -1,6 +1,6 @@
 gen-host-fasthttp-request
 ================
-A tool based on package [github.com/Bofry/host-fasthttp](https://github.com/Bofry/host-fasthttp)
+A tool based on package [github.com/Bofry/host-fasthttp](https://github.com/Bofry/host-fasthttp) to genreating incipient request go files.
 
 ## **Synopsis**
 ⠿ Generating *xxxRequest.go* with `go:generate` directive.
