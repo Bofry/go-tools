@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestXxx(t *testing.T) {
+func TestAssertorFileWriter_Write(t *testing.T) {
 	file := &AssertorFile{
 		PackageName: "test",
 		Imports: []*ImportDirective{
@@ -93,7 +93,7 @@ func TestXxx(t *testing.T) {
 	writer := NewAssertorFileWriter()
 	writer.Write(&buf, file)
 
-	exceptedOutput := []byte(`package test
+	expectedOutput := []byte(`package test
 
 import (
 	arg "github.com/Bofry/arg"
@@ -159,7 +159,7 @@ func (assertor *ProtagonistArgvAssertor) Token(validators ...arg.NumberValidator
 }
 `)
 
-	if !reflect.DeepEqual(exceptedOutput, buf.Bytes()) {
-		t.Errorf("unit test failed. output doesn't match excepted.")
+	if !reflect.DeepEqual(expectedOutput, buf.Bytes()) {
+		t.Errorf("unit test failed. output doesn't match expected.")
 	}
 }
