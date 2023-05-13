@@ -29,6 +29,7 @@ const (
 )
 
 var (
+	osExit        func(int) = os.Exit
 	gofile        string
 	workdir       string
 	appModuleName string
@@ -143,7 +144,7 @@ func exit(code int) {
 	if len(workdir) > 0 {
 		os.Chdir(workdir)
 	}
-	os.Exit(code)
+	osExit(code)
 }
 
 func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int, err error) {
@@ -267,6 +268,8 @@ func importHandlerModulePath(fset *token.FileSet, f *ast.File) error {
 		if err != nil {
 			return err
 		}
+		defer stream.Close()
+
 		err = printer.Fprint(stream, fset, f)
 		if err != nil {
 			return err
