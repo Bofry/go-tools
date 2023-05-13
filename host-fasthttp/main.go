@@ -56,7 +56,7 @@ func main() {
 				switch v {
 				case "-v":
 					if len(os.Args) > 4 {
-						// run go get -u -v github.com/Bofry/host-fasthttp@05e18b1
+						// run go get -u -v github.com/Bofry/host-fasthttp@<version>
 						v = os.Args[4]
 						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+v)
 						if err != nil {
