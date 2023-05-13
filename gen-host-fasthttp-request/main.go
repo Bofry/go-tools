@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"unicode"
@@ -29,21 +30,35 @@ const (
 
 var (
 	gofile        string
+	workdir       string
 	appModuleName string
 )
+
+func init() {
+	flag.StringVar(&gofile, "file", "", "input file")
+}
 
 func main() {
 	var (
 		err error
 	)
+	flag.Parse()
 
-	flag.StringVar(&gofile, "file", "", "input file")
+	if dir, file := path.Split(gofile); dir != "." {
+		workdir, err = os.Getwd()
+		if err != nil {
+			throw("Cannot get work directory.")
+			exit(1)
+		}
+		os.Chdir(dir)
+		gofile = file
+	}
 
 	if gofile == "" {
 		gofile = os.Getenv("GOFILE")
 		if gofile == "" {
 			throw("No file to parse.")
-			os.Exit(1)
+			exit(1)
 		}
 	}
 
@@ -51,7 +66,7 @@ func main() {
 	appModuleName, err = getAppModuleName()
 	if err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	// parse app.go to AST
@@ -59,7 +74,7 @@ func main() {
 	f, err := parser.ParseFile(fset, gofile, nil, parser.ParseComments)
 	if err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	// resolve AST
@@ -89,7 +104,7 @@ func main() {
 							count, err = generateRequestFiles(structType, HANDLER_MODULE_NAME)
 							if err != nil {
 								throw(err.Error())
-								os.Exit(1)
+								exit(1)
 							}
 						}
 
@@ -98,7 +113,7 @@ func main() {
 							err := importHandlerModulePath(fset, f)
 							if err != nil {
 								throw(err.Error())
-								os.Exit(1)
+								exit(1)
 							}
 						}
 						break
@@ -110,17 +125,25 @@ func main() {
 
 	if err := execCmd("go", "mod", "tidy"); err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	if err := execCmd("gofmt", "-w", gofile); err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
+	exit(0)
 }
 
 func throw(err string) {
 	fmt.Fprintln(os.Stderr, err)
+}
+
+func exit(code int) {
+	if len(workdir) > 0 {
+		os.Chdir(workdir)
+	}
+	os.Exit(code)
 }
 
 func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int, err error) {
@@ -144,7 +167,7 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 							requestFilename,
 							existedTypeName,
 							requestTypename))
-						os.Exit(1)
+						exit(1)
 					}
 					requestFileNames[requestFilename] = requestTypename
 				}
@@ -232,13 +255,6 @@ func createRequestFile(filename, typename string, handlerDir string) (*os.File, 
 		return nil, err
 	}
 	return nil, os.ErrExist
-}
-
-func writeResouceContent(file *os.File, typename string) error {
-	_, err := fmt.Fprintf(file,
-		REQUEST_FILE_TEMPLATE, typename)
-
-	return err
 }
 
 func importHandlerModulePath(fset *token.FileSet, f *ast.File) error {
