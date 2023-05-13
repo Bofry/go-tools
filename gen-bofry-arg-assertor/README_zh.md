@@ -1,6 +1,6 @@
 [EN](README.md)
 
-bofry-arg-assertor
+gen-bofry-arg-assertor
 ================
 提供基於 [github.com/Bofry/arg](https://github.com/Bofry/arg) 套件產生參數驗證的程式碼工具。
 
@@ -26,7 +26,7 @@ type ProtagonistArgv struct {
     ```
 - **步驟二**： 在終端機使用下面的命令。產生 **ProtagonistArgvAssertor** 的型別與 **protagonistArgvAssertor_gen.go** 檔案。
     ```bash
-    $ bofry-arg-assertor -path protagonistArgv.go
+    $ gen-bofry-arg-assertor -path protagonistArgv.go
     ```
 - **步驟三**： 步驟二完成後，我們可以在 **ProtagonistArgv** 中使用 **ProtagonistArgvAssertor** 型別提供的參數驗證方法。使用前需先匯入套件引用指示 `"github.com/Bofry/arg"`，同時建立要驗證的方法函式如下：
     ```go

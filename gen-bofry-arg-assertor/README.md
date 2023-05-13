@@ -1,6 +1,6 @@
 [ZH](README_zh.md)
 
-bofry-arg-assertor
+gen-bofry-arg-assertor
 ================
 A tool based on package [github.com/Bofry/arg](https://github.com/Bofry/arg) to generate soure code for given files.
 
@@ -26,7 +26,7 @@ type ProtagonistArgv struct {
     ```
 - **Step 2**: Executes the command on your terminal. The command will generate type **ProtagonistArgvAssertor** and file **protagonistArgvAssertor_gen.go** for later use.
     ```bash
-    $ bofry-arg-assertor -path protagonistArgv.go
+    $ gen-bofry-arg-assertor -path protagonistArgv.go
     ```
 - **Step 3**: After the completion of Step 2, we can compose validating code with the methods of **ProtagonistArgvAssertor** under the type **ProtagonistArgv**. Before starting, the package `"github.com/Bofry/arg"` should be imported first. The validating sample code as following:
     ```go
