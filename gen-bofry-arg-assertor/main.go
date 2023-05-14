@@ -25,6 +25,7 @@ const (
 )
 
 var (
+	osExit func(int) = os.Exit
 	gofile string
 )
 
@@ -39,12 +40,13 @@ type (
 )
 
 func init() {
-	flag.StringVar(&gofile, "path", "", "the argv source file")
+	flag.StringVar(&gofile, "target", "", "the argv source file or directory")
 }
 
 func main() {
-	var err error
-
+	var (
+		err error
+	)
 	flag.Parse()
 
 	fmt.Println(gofile)
@@ -53,7 +55,7 @@ func main() {
 		gofile = os.Getenv("GOFILE")
 		if gofile == "" {
 			throw("No file to parse.")
-			os.Exit(1)
+			exit(1)
 		}
 	}
 
@@ -70,13 +72,13 @@ func main() {
 	f, err := parseAst(gofile, &info)
 	if err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	file := new(AssertorFile)
 	if err = fillAssertorFile(file, f, &info); err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	writer := NewAssertorFileWriter()
@@ -84,13 +86,14 @@ func main() {
 
 	if err = writeFile(outputFile, writer, file); err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 
 	if err = execCmd("gofmt", "-w", outputFile); err != nil {
 		throw(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
+	exit(0)
 }
 
 func writeFile(filename string, writer *AssertorFileWriter, file *AssertorFile) error {
@@ -263,6 +266,10 @@ func execCmd(name string, arg ...string) error {
 
 func throw(err string) {
 	fmt.Fprintln(os.Stderr, err)
+}
+
+func exit(code int) {
+	osExit(code)
 }
 
 func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
