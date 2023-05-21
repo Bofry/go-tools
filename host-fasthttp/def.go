@@ -1,6 +1,8 @@
 package main
 
-const (
+import "strings"
+
+var (
 	DIR_CONF = ".conf"
 
 	FILE_ENV          = ".env"
@@ -24,6 +26,42 @@ env.bat
 env.sh
 env.*.bat
 env.*.sh
+`
+	FILE_LOAD_ENV_SH          = "loadenv.sh"
+	FILE_LOAD_ENV_SH_TEMPLATE = `#!/usr/bin/env bash
+
+ENV_FILE=.env
+
+if [ ! -f "$ENV_FILE" ]; then
+	echo "can not find $ENV_FILE file"
+	exit 1
+fi
+# load .env file
+while IFS='' read -r setting || [[ -n "$setting" ]]; do
+	if [ "${setting:0:1}" != "#" ]; then
+		export ${setting}
+	fi
+done < $ENV_FILE
+`
+
+	FILE_LOAD_ENV_BAT          = "loadenv.bat"
+	FILE_LOAD_ENV_BAT_TEMPLATE = `@ECHO OFF
+
+SET ENV_FILE=.env
+
+IF NOT EXIST %ENV_FILE% (
+	ECHO "can not find %ENV_FILE% file"
+	EXIT /B 1
+)
+REM load .env file
+FOR /F "tokens=*" %%i in ('type %ENV_FILE%') DO (
+	SET LINE=%%i
+	IF [!LINE!] NEQ [] (
+		IF "!LINE:~0,1!" NEQ "#" (
+			SET %%i
+		)
+	)
+)
 `
 
 	FILE_DOCKERFILE          = "Dockerfile"
@@ -71,7 +109,7 @@ useCompress: true
 `
 
 	FILE_INTERNAL_DEF_GO          = "internal/def.go"
-	FILE_INTERNAL_DEF_GO_TEMPLATE = `package internal
+	FILE_INTERNAL_DEF_GO_TEMPLATE = strings.ReplaceAll(`package internal
 
 import (
 	"log"
@@ -116,7 +154,7 @@ func (h *Host) Init(conf *Config) {
 	h.EnableCompress = conf.EnableCompress
 	h.Version = conf.Version
 }
-`
+`, "”", "`")
 
 	FILE_INTERNAL_SERVICE_PROVIDER_GO          = "internal/serviceProvider.go"
 	FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE = `package internal
@@ -198,6 +236,8 @@ func (app *App) Logger() *log.Logger {
 
 func (app *App) ConfigureTracerProvider() {
 	if len(app.Config.JaegerTraceUrl) == 0 {
+		tp, _ := trace.NoopProvider()
+		trace.SetTracerProvider(tp)
 		return
 	}
 
@@ -233,7 +273,7 @@ func (app *App) TextMapPropagator() propagation.TextMapPropagator {
 `
 
 	FILE_APP_GO          = "app.go"
-	FILE_APP_GO_TEMPLATE = `package main
+	FILE_APP_GO_TEMPLATE = strings.ReplaceAll(`package main
 
 import (	
 	. "{{.ModuleName}}/internal"
@@ -278,7 +318,7 @@ func main() {
 		}).
 		Run()
 }
-`
+`, "”", "`")
 )
 
 type AppMetadata struct {

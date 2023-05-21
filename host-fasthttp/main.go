@@ -17,8 +17,8 @@ import (
 
 var (
 	__FILE_TEMPLATES = map[string]string{
-		FILE_APP_GO:                       strings.ReplaceAll(FILE_APP_GO_TEMPLATE, "”", "`"),
-		FILE_INTERNAL_DEF_GO:              strings.ReplaceAll(FILE_INTERNAL_DEF_GO_TEMPLATE, "”", "`"),
+		FILE_APP_GO:                       FILE_APP_GO_TEMPLATE,
+		FILE_INTERNAL_DEF_GO:              FILE_INTERNAL_DEF_GO_TEMPLATE,
 		FILE_INTERNAL_APP_GO:              FILE_INTERNAL_APP_GO_TEMPLATE,
 		FILE_INTERNAL_SERVICE_PROVIDER_GO: FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE,
 		FILE_CONFIG_YAML:                  FILE_CONFIG_YAML_TEMPLATE,
@@ -26,6 +26,8 @@ var (
 		FILE_GITIGNORE:                    FILE_GITIGNORE_TEMPLATE,
 		FILE_ENV:                          FILE_ENV_TEMPLATE,
 		FILE_ENV_SAMPLE:                   FILE_ENV_SAMPLE_TEMPLATE,
+		FILE_LOAD_ENV_SH:                  FILE_LOAD_ENV_SH_TEMPLATE,
+		FILE_LOAD_ENV_BAT:                 FILE_LOAD_ENV_BAT_TEMPLATE,
 		FILE_DOCKERFILE:                   FILE_DOCKERFILE_TEMPLATE,
 	}
 )
