@@ -150,8 +150,6 @@ func Test(t *testing.T) {
 		os.RemoveAll(tmp)
 	})
 
-	t.Log()
-
 	workdir, err := os.Getwd()
 	if err != nil {
 		t.FailNow()
