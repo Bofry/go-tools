@@ -12,22 +12,22 @@ import (
 )
 
 const (
-	FILE_GO_MOD         = "go.mod"
-	FILE_GO_MOD_CONTENT = `module rungo-demo
+	_FILE_GO_MOD         = "go.mod"
+	_FILE_GO_MOD_CONTENT = `module rungo-demo
 
 go 1.20
 `
 
-	FILE_ENV         = ".env"
-	FILE_ENV_CONTENT = `Environment=local
+	_FILE_ENV         = ".env"
+	_FILE_ENV_CONTENT = `Environment=local
 EnvFoo=bar
 `
-	FILE_ENV_TEST         = ".env.test"
-	FILE_ENV_TEST_CONTENT = `Environment=test
+	_FILE_ENV_TEST         = ".env.test"
+	_FILE_ENV_TEST_CONTENT = `Environment=test
 EnvFoo=foobar
 `
-	FILE_APP_GO         = "app.go"
-	FILE_APP_GO_CONTENT = `package main
+	_FILE_APP_GO         = "app.go"
+	_FILE_APP_GO_CONTENT = `package main
 
 import (
 	"fmt"
@@ -66,10 +66,10 @@ func Test_WithEnvTest(t *testing.T) {
 	}
 
 	assert(t,
-		createTempFiles(tmp, FILE_GO_MOD_CONTENT, FILE_GO_MOD),
-		createTempFiles(tmp, FILE_ENV_CONTENT, FILE_ENV),
-		createTempFiles(tmp, FILE_ENV_TEST_CONTENT, FILE_ENV_TEST),
-		createTempFiles(tmp, FILE_APP_GO_CONTENT, FILE_APP_GO),
+		createTempFiles(tmp, _FILE_GO_MOD_CONTENT, _FILE_GO_MOD),
+		createTempFiles(tmp, _FILE_ENV_CONTENT, _FILE_ENV),
+		createTempFiles(tmp, _FILE_ENV_TEST_CONTENT, _FILE_ENV_TEST),
+		createTempFiles(tmp, _FILE_APP_GO_CONTENT, _FILE_APP_GO),
 	)
 
 	defaultStdout := os.Stdout
@@ -129,10 +129,10 @@ func Test_WithDefaultEnv(t *testing.T) {
 	}
 
 	assert(t,
-		createTempFiles(tmp, FILE_GO_MOD_CONTENT, FILE_GO_MOD),
-		createTempFiles(tmp, FILE_ENV_CONTENT, FILE_ENV),
-		createTempFiles(tmp, FILE_ENV_TEST_CONTENT, FILE_ENV_TEST),
-		createTempFiles(tmp, FILE_APP_GO_CONTENT, FILE_APP_GO),
+		createTempFiles(tmp, _FILE_GO_MOD_CONTENT, _FILE_GO_MOD),
+		createTempFiles(tmp, _FILE_ENV_CONTENT, _FILE_ENV),
+		createTempFiles(tmp, _FILE_ENV_TEST_CONTENT, _FILE_ENV_TEST),
+		createTempFiles(tmp, _FILE_APP_GO_CONTENT, _FILE_APP_GO),
 	)
 
 	defaultStdout := os.Stdout
