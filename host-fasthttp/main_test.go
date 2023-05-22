@@ -152,7 +152,7 @@ func Test(t *testing.T) {
 
 	workdir, err := os.Getwd()
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	os.Chdir(tmp)
