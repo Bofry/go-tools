@@ -102,6 +102,7 @@ func writeFile(filename string, writer *AssertorFileWriter, file *AssertorFile) 
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 
 		return writer.Write(f, file)
 	}

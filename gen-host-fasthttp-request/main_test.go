@@ -85,7 +85,7 @@ func Test(t *testing.T) {
 	)
 
 	os.Args = []string{
-		"app",
+		"gen-host-fasthttp-request",
 		"-file",
 		path.Join(tmp, "app.go"),
 	}

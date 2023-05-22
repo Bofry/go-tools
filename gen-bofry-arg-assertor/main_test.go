@@ -124,7 +124,7 @@ func Test(t *testing.T) {
 	)
 
 	os.Args = []string{
-		"app",
+		"gen-bofry-arg-assertor",
 		"-target",
 		path.Join(tmp, "protagonistArgv.go"),
 	}
