@@ -58,7 +58,6 @@ func Test_WithEnvTest(t *testing.T) {
 	t.Cleanup(func() {
 		os.RemoveAll(tmp)
 	})
-	t.Logf("%v", tmp)
 
 	workdir, err := os.Getwd()
 	if err != nil {
@@ -121,7 +120,6 @@ func Test_WithDefaultEnv(t *testing.T) {
 	t.Cleanup(func() {
 		os.RemoveAll(tmp)
 	})
-	t.Logf("%v", tmp)
 
 	workdir, err := os.Getwd()
 	if err != nil {
