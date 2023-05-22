@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+	"path"
+	"strings"
+)
 
 var (
 	DIR_CONF = ".conf"
@@ -108,7 +111,7 @@ serverName: WebAPI
 useCompress: true
 `
 
-	FILE_INTERNAL_DEF_GO          = "internal/def.go"
+	FILE_INTERNAL_DEF_GO          = path.Join("internal", "def.go")
 	FILE_INTERNAL_DEF_GO_TEMPLATE = strings.ReplaceAll(`package internal
 
 import (
@@ -156,7 +159,7 @@ func (h *Host) Init(conf *Config) {
 }
 `, "”", "`")
 
-	FILE_INTERNAL_SERVICE_PROVIDER_GO          = "internal/serviceProvider.go"
+	FILE_INTERNAL_SERVICE_PROVIDER_GO          = path.Join("internal", "serviceProvider.go")
 	FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE = `package internal
 
 import (
@@ -185,7 +188,7 @@ func (p *ServiceProvider) Logger() *log.Logger {
 }
 `
 
-	FILE_INTERNAL_APP_GO          = "internal/app.go"
+	FILE_INTERNAL_APP_GO          = path.Join("internal", "app.go")
 	FILE_INTERNAL_APP_GO_TEMPLATE = `package internal
 
 import (

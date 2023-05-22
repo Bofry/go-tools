@@ -16,6 +16,10 @@ import (
 )
 
 var (
+	osExit func(int) = os.Exit
+)
+
+var (
 	__FILE_TEMPLATES = map[string]string{
 		FILE_APP_GO:                       FILE_APP_GO_TEMPLATE,
 		FILE_INTERNAL_DEF_GO:              FILE_INTERNAL_DEF_GO_TEMPLATE,
@@ -35,7 +39,7 @@ var (
 func main() {
 	if len(os.Args) < 2 {
 		showUsage()
-		os.Exit(0)
+		exit(0)
 	}
 
 	argv := os.Args[1]
@@ -46,12 +50,13 @@ func main() {
 
 			err error
 		)
+
 		if len(os.Args) > 2 {
 			moduleName = os.Args[2]
 			moduleName, err = initModule(moduleName)
 			if err != nil {
 				throw(err.Error())
-				os.Exit(1)
+				exit(1)
 			}
 			if len(os.Args) > 3 {
 				v := os.Args[3]
@@ -63,7 +68,7 @@ func main() {
 						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+v)
 						if err != nil {
 							throw(err.Error())
-							os.Exit(1)
+							exit(1)
 						}
 					}
 				}
@@ -72,7 +77,7 @@ func main() {
 			moduleName, err = getModuleName()
 			if err != nil {
 				throw(err.Error())
-				os.Exit(1)
+				exit(1)
 			}
 		}
 
@@ -80,7 +85,11 @@ func main() {
 			ModuleName: moduleName,
 			AppExeName: extractAppExeName(moduleName),
 		}
-		initProject(&metadata)
+		err = initProject(&metadata)
+		if err != nil {
+			throw(err.Error())
+			exit(1)
+		}
 	case "help":
 		showUsage()
 	}
@@ -97,6 +106,10 @@ func do(errs ...error) error {
 
 func throw(err string) {
 	fmt.Fprintln(os.Stderr, err)
+}
+
+func exit(code int) {
+	osExit(code)
 }
 
 func showUsage() {
@@ -169,16 +182,12 @@ func initModule(name string) (moduleName string, err error) {
 	return moduleName, executeCommand("go", "mod", "init", moduleName)
 }
 
-func initProject(metadata *AppMetadata) {
-	err := do(
+func initProject(metadata *AppMetadata) error {
+	return do(
 		generateFiles(metadata),
 		generateDir(DIR_CONF),
 		executeCommand("go", "mod", "tidy"),
 	)
-	if err != nil {
-		throw(err.Error())
-		os.Exit(1)
-	}
 }
 
 func generateDir(dir string) error {
