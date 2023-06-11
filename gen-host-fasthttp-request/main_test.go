@@ -66,7 +66,7 @@ func (r *HealthCheckRequest) Ping(ctx *fasthttp.RequestCtx) {
 	// disable tracing
 	trace.SpanFromContext(ctx).Disable(true)
 
-	response.Success(ctx, "text/plain", []byte("PONG"))
+	response.Text.Success(ctx, "PONG")
 }
 `
 )
