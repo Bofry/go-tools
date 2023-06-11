@@ -14,7 +14,7 @@ var (
 go 1.19
 
 require (
-	github.com/Bofry/host-fasthttp v0.1.2-0.20230328172331-74788714c83b
+	github.com/Bofry/host-fasthttp v0.1.2-0.20230611163728-f0c67fe9af5b
 	github.com/Bofry/trace v0.0.0-20230327070031-663464d25b86
 	github.com/valyala/fasthttp v1.45.0
 )
@@ -64,7 +64,7 @@ type HealthCheckRequest struct {
 
 func (r *HealthCheckRequest) Ping(ctx *fasthttp.RequestCtx) {
 	// disable tracing
-	trace.SpanFromContext(ctx).Disable(true)
+	tracing.SpanFromRequestCtx(ctx).Disable(true)
 
 	response.Text.Success(ctx, "PONG")
 }

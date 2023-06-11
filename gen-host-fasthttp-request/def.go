@@ -17,7 +17,7 @@ type {{.RequestName}} struct {
 
 func (r *{{.RequestName}}) Ping(ctx *fasthttp.RequestCtx) {
 	// disable tracing
-	trace.SpanFromContext(ctx).Disable(true)
+	tracing.SpanFromRequestCtx(ctx).Disable(true)
 
 	response.Text.Success(ctx, "PONG")
 }
