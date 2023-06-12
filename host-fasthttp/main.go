@@ -52,25 +52,43 @@ func main() {
 		)
 
 		if len(os.Args) > 2 {
-			moduleName = os.Args[2]
-			moduleName, err = initModule(moduleName)
-			if err != nil {
-				throw(err.Error())
-				exit(1)
+			var pos int = 2
+			argv = os.Args[pos]
+
+			if strings.HasPrefix(argv, "-") {
+				moduleName, err = getModuleName()
+				if err != nil {
+					throw(err.Error())
+					exit(1)
+				}
+			} else {
+				moduleName = argv
+				moduleName, err = initModule(moduleName)
+				if err != nil {
+					throw(err.Error())
+					exit(1)
+				}
+				pos++
 			}
-			if len(os.Args) > 3 {
-				v := os.Args[3]
-				switch v {
+
+			for len(os.Args) > pos {
+				argv = os.Args[pos]
+				pos++
+				switch argv {
 				case "-v":
-					if len(os.Args) > 4 {
+					if len(os.Args) > pos {
 						// run go get -u -v github.com/Bofry/host-fasthttp@<version>
-						v = os.Args[4]
-						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+v)
+						argv = os.Args[pos]
+						pos++
+						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+argv)
 						if err != nil {
 							throw(err.Error())
 							exit(1)
 						}
 					}
+				default:
+					throw(fmt.Sprintf("unknown flag '%s'\n", argv))
+					exit(1)
 				}
 			}
 		} else {
@@ -90,8 +108,13 @@ func main() {
 			throw(err.Error())
 			exit(1)
 		}
-	case "help":
+	case "help", "-h", "--help":
 		showUsage()
+		exit(0)
+	default:
+		throw(fmt.Sprintf("unknown command '%s'\n", argv))
+		showUsage()
+		exit(1)
 	}
 }
 
@@ -168,9 +191,15 @@ func executeCommand(name string, args ...string) error {
 func initModule(name string) (moduleName string, err error) {
 	moduleName = name
 
-	// NOTE: if module name is ".", use the current working
-	//  directory instead.
+	// NOTE: if specified module name as ".", parse current module name from
+	//  existed go.mod file first or else use the current working directory
+	//  name instead.
 	if name == "." {
+		f, _ := os.Stat("go.mod")
+		if f != nil {
+			return getModuleName()
+		}
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return moduleName, err
