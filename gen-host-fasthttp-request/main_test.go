@@ -53,9 +53,9 @@ func main() {}
 import (
 	. "host-fasthttp-request-demo/internal"
 
-	"github.com/Bofry/trace"
-	"github.com/valyala/fasthttp"
 	"github.com/Bofry/host-fasthttp/response"
+	"github.com/Bofry/host-fasthttp/tracing"
+	"github.com/valyala/fasthttp"
 )
 
 type HealthCheckRequest struct {
@@ -90,7 +90,11 @@ func Test(t *testing.T) {
 		path.Join(tmp, "app.go"),
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
-	osExit = func(i int) {} // do nothing
+	osExit = func(i int) {
+		if i != 0 {
+			t.Fatalf("got exit code %d", i)
+		}
+	}
 	main()
 
 	{

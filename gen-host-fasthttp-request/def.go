@@ -6,9 +6,9 @@ const (
 import (
 	. "{{.AppModuleName}}/internal"
 
-	"github.com/Bofry/trace"
-	"github.com/valyala/fasthttp"
 	"github.com/Bofry/host-fasthttp/response"
+	"github.com/Bofry/host-fasthttp/tracing"
+	"github.com/valyala/fasthttp"
 )
 
 type {{.RequestName}} struct {
