@@ -129,7 +129,11 @@ func Test(t *testing.T) {
 		path.Join(tmp, "protagonistArgv.go"),
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
-	osExit = func(i int) {} // do nothing
+	osExit = func(i int) {
+		if i != 0 {
+			t.Fatalf("got exit code %d", i)
+		}
+	}
 	main()
 
 	{
