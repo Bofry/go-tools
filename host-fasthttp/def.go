@@ -283,14 +283,16 @@ import (
 
 	"github.com/Bofry/config"
 	fasthttp "github.com/Bofry/host-fasthttp"
+	"github.com/Bofry/host-fasthttp/handlers"
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/response/failure"
 )
 
 //go:generate gen-host-fasthttp-request
 type RequestManager struct {
-	/* put your request handler here */
-	// *HealthCheckRequest ”url:"/healthcheck"”
+	/* put your request handler below */
+	// *RootRequest ”url:"/"”
+	*handlers.HealthCheckRequest ”url:"/healthcheck"”
 }
 
 func main() {

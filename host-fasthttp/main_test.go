@@ -103,14 +103,16 @@ import (
 
 	"github.com/Bofry/config"
 	fasthttp "github.com/Bofry/host-fasthttp"
+	"github.com/Bofry/host-fasthttp/handlers"
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/response/failure"
 )
 
 //go:generate gen-host-fasthttp-request
 type RequestManager struct {
-	/* put your request handler here */
-	// *HealthCheckRequest ”url:"/healthcheck"”
+	/* put your request handler below */
+	// *RootRequest ”url:"/"”
+	*handlers.HealthCheckRequest ”url:"/healthcheck"”
 }
 
 func main() {
@@ -161,7 +163,7 @@ func Test(t *testing.T) {
 		"init",
 		"host-fasthttp-demo",
 		"-v",
-		"bb3be52",
+		"v0.2.0-alpha.20230613163028",
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
 	osExit = func(i int) {
