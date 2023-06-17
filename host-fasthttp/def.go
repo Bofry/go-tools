@@ -157,6 +157,10 @@ func (h *Host) Init(conf *Config) {
 	h.EnableCompress = conf.EnableCompress
 	h.Version = conf.Version
 }
+
+func (h *Host) OnError(err error) (disposed bool) {
+	return false
+}
 `, "”", "`")
 
 	FILE_INTERNAL_SERVICE_PROVIDER_GO          = path.Join("internal", "serviceProvider.go")

@@ -93,6 +93,10 @@ func (h *Host) Init(conf *Config) {
 	h.EnableCompress = conf.EnableCompress
 	h.Version = conf.Version
 }
+
+func (h *Host) OnError(err error) (disposed bool) {
+	return false
+}
 `, "”", "`")
 	_EXPECT_FILE_INTERNAL_SERVICE_PROVIDER_GO = FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE
 	_EXPECT_FILE_INTERNAL_APP_GO              = FILE_INTERNAL_APP_GO_TEMPLATE
@@ -163,7 +167,7 @@ func Test(t *testing.T) {
 		"init",
 		"host-fasthttp-demo",
 		"-v",
-		"v0.2.0-alpha.20230613163028",
+		"v0.2.0-alpha.20230617171011",
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
 	osExit = func(i int) {
