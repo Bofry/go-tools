@@ -100,6 +100,8 @@ func (h *Host) OnError(err error) (disposed bool) {
 `, "”", "`")
 	_EXPECT_FILE_INTERNAL_SERVICE_PROVIDER_GO = FILE_INTERNAL_SERVICE_PROVIDER_GO_TEMPLATE
 	_EXPECT_FILE_INTERNAL_APP_GO              = FILE_INTERNAL_APP_GO_TEMPLATE
+	_EXPECT_FILE_INTERNAL_EVENT_LOG_GO        = FILE_INTERNAL_EVENT_LOG_GO_TEMPLATE
+	_EXPECT_FILE_INTERNAL_LOGGING_SERVICE_GO  = FILE_INTERNAL_LOGGING_SERVICE_GO_TEMPLATE
 	_EXPECT_FILE_APP_GO                       = strings.ReplaceAll(`package main
 
 import (	
@@ -126,6 +128,7 @@ func main() {
 			fasthttp.UseRequestManager(&RequestManager{}),
 			fasthttp.UseXHttpMethodHeader(),
 			fasthttp.UseTracing(true),
+			fasthttp.UseLogging(&LoggingService{}),
 			fasthttp.UseErrorHandler(func(ctx *fasthttp.RequestCtx, err interface{}) {
 				fail, ok := err.(*failure.Failure)
 				if ok {
@@ -167,7 +170,7 @@ func Test(t *testing.T) {
 		"init",
 		"host-fasthttp-demo",
 		"-v",
-		"v0.2.0-alpha.20230617171011",
+		"v0.2.0-alpha.20230619171940",
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
 	osExit = func(i int) {
@@ -305,6 +308,28 @@ func Test(t *testing.T) {
 			t.Fatal(err)
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_APP_GO
+		if expectedContent != string(content) {
+			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+		}
+	}
+	{
+		// check internal/eventLog.go
+		content, err := readFile(tmp, FILE_INTERNAL_EVENT_LOG_GO)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_INTERNAL_EVENT_LOG_GO
+		if expectedContent != string(content) {
+			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+		}
+	}
+	{
+		// check internal/loggingService.go
+		content, err := readFile(tmp, FILE_INTERNAL_LOGGING_SERVICE_GO)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_INTERNAL_LOGGING_SERVICE_GO
 		if expectedContent != string(content) {
 			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
 		}

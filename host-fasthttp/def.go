@@ -30,6 +30,7 @@ env.sh
 env.*.bat
 env.*.sh
 `
+
 	FILE_LOAD_ENV_SH          = "loadenv.sh"
 	FILE_LOAD_ENV_SH_TEMPLATE = `#!/usr/bin/env bash
 
@@ -279,6 +280,63 @@ func (app *App) TextMapPropagator() propagation.TextMapPropagator {
 }
 `
 
+	FILE_INTERNAL_EVENT_LOG_GO          = path.Join("internal", "eventLog.go")
+	FILE_INTERNAL_EVENT_LOG_GO_TEMPLATE = `package internal
+
+import (
+	"log"
+
+	fasthttp "github.com/Bofry/host-fasthttp"
+	"github.com/Bofry/host-fasthttp/response"
+)
+
+var _ fasthttp.EventLog = EventLog{}
+
+type EventLog struct {
+	logger   *log.Logger
+	evidence fasthttp.EventEvidence
+}
+
+func (l EventLog) OnError(ctx *fasthttp.RequestCtx, err interface{}, stackTrace []byte) {
+}
+
+func (l EventLog) OnProcessRequest(ctx *fasthttp.RequestCtx) {
+}
+
+func (l EventLog) OnProcessRequestComplete(ctx *fasthttp.RequestCtx, flag response.ResponseFlag) {
+}
+
+func (l EventLog) Flush() {
+}
+`
+
+	FILE_INTERNAL_LOGGING_SERVICE_GO          = path.Join("internal", "loggingService.go")
+	FILE_INTERNAL_LOGGING_SERVICE_GO_TEMPLATE = `package internal
+
+import (
+	"log"
+
+	fasthttp "github.com/Bofry/host-fasthttp"
+)
+
+var _ fasthttp.LoggingService = new(LoggingService)
+
+type LoggingService struct {
+	logger *log.Logger
+}
+
+func (s *LoggingService) CreateEventLog(ev fasthttp.EventEvidence) fasthttp.EventLog {
+	return EventLog{
+		logger:   s.logger,
+		evidence: ev,
+	}
+}
+
+func (s *LoggingService) ConfigureLogger(l *log.Logger) {
+	s.logger = l
+}
+`
+
 	FILE_APP_GO          = "app.go"
 	FILE_APP_GO_TEMPLATE = strings.ReplaceAll(`package main
 
@@ -306,6 +364,7 @@ func main() {
 			fasthttp.UseRequestManager(&RequestManager{}),
 			fasthttp.UseXHttpMethodHeader(),
 			fasthttp.UseTracing(true),
+			fasthttp.UseLogging(&LoggingService{}),
 			fasthttp.UseErrorHandler(func(ctx *fasthttp.RequestCtx, err interface{}) {
 				fail, ok := err.(*failure.Failure)
 				if ok {
