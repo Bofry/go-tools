@@ -12,6 +12,8 @@ var (
 	_EXPECT_FILE_ENV          = FILE_ENV_TEMPLATE
 	_EXPECT_FILE_ENV_SAMPLE   = FILE_ENV_SAMPLE_TEMPLATE
 	_EXPECT_FILE_GITIGNORE    = FILE_GITIGNORE_TEMPLATE
+	_EXPECT_FILE_SERVICE_NAME = `host-fasthttp-demo
+`
 	_EXPECT_FILE_LOAD_ENV_SH  = FILE_LOAD_ENV_SH_TEMPLATE
 	_EXPECT_FILE_LOAD_ENV_BAT = FILE_LOAD_ENV_BAT_TEMPLATE
 	_EXPECT_FILE_DOCKERFILE   = `
@@ -47,8 +49,12 @@ RUN apk del git && \
 CMD ./host-fasthttp-demo
 `
 	_EXPECT_FILE_CONFIG_LOCAL_YAML = FILE_CONFIG_LOCAL_YAML_TEMPLATE
-	_EXPECT_FILE_CONFIG_YAML       = FILE_CONFIG_YAML_TEMPLATE
-	_EXPECT_FILE_INTERNAL_DEF_GO   = strings.ReplaceAll(`package internal
+	_EXPECT_FILE_CONFIG_YAML       = `
+ListenAddress: ":80"
+ServerName: host-fasthttp-demo
+UseCompress: true
+`
+	_EXPECT_FILE_INTERNAL_DEF_GO = strings.ReplaceAll(`package internal
 
 import (
 	"log"
@@ -57,7 +63,7 @@ import (
 )
 
 var (
-	logger *log.Logger = log.New(log.Writer(), "[host-fasthttp-demo] ", log.LstdFlags|log.Lmsgprefix|log.LUTC)
+	defaultLogger *log.Logger = log.New(log.Writer(), "[host-fasthttp-demo] ", log.LstdFlags|log.Lmsgprefix|log.LUTC)
 )
 
 type (
@@ -67,13 +73,14 @@ type (
 		Environment string ”env:"Environment"”
 
 		// app
-		Version   string ”resource:".VERSION"”
-		Signature string ”resource:".SIGNATURE"”
+		Version     string ”resource:".VERSION"”
+		Signature   string ”resource:".SIGNATURE"”
+		ServiceName string ”resource:".SERVICE_NAME"”
 
 		// host-fasthttp server
-		ListenAddress  string ”yaml:"address"        arg:"address;the combination of IP address and listen port"”
-		EnableCompress bool   ”yaml:"useCompress"    arg:"use-compress;indicates the response enable compress or not"”
-		ServerName     string ”yaml:"serverName"”
+		ListenAddress  string ”yaml:"ListenAddress"  arg:"listen-address;the combination of IP address and listen port"”
+		EnableCompress bool   ”yaml:"UseCompress"    arg:"use-compress;indicates the response enable compress or not"”
+		ServerName     string ”yaml:"ServerName"”
 
 		// tracing
 		JaegerTraceUrl string ”env:"JaegerTraceUrl"”
@@ -87,7 +94,7 @@ func (h *Host) Init(conf *Config) {
 		Name:                          conf.ServerName,
 		DisableKeepalive:              true,
 		DisableHeaderNamesNormalizing: true,
-		Logger:                        logger,
+		Logger:                        defaultLogger,
 	}
 	h.ListenAddress = conf.ListenAddress
 	h.EnableCompress = conf.EnableCompress
@@ -127,8 +134,8 @@ func main() {
 		Middlewares(
 			fasthttp.UseRequestManager(&RequestManager{}),
 			fasthttp.UseXHttpMethodHeader(),
-			fasthttp.UseTracing(true),
 			fasthttp.UseLogging(&LoggingService{}),
+			fasthttp.UseTracing(true),
 			fasthttp.UseErrorHandler(func(ctx *fasthttp.RequestCtx, err interface{}) {
 				fail, ok := err.(*failure.Failure)
 				if ok {
@@ -199,7 +206,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_ENV
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_ENV, expectedContent, string(content))
 		}
 	}
 	{
@@ -210,7 +217,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_ENV_SAMPLE
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_ENV_SAMPLE, expectedContent, string(content))
 		}
 	}
 	{
@@ -221,7 +228,18 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_GITIGNORE
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_GITIGNORE, expectedContent, string(content))
+		}
+	}
+	{
+		// check .gitignore
+		content, err := readFile(tmp, FILE_SERVICE_NAME)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_SERVICE_NAME
+		if expectedContent != string(content) {
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_SERVICE_NAME, expectedContent, string(content))
 		}
 	}
 	{
@@ -232,7 +250,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_LOAD_ENV_SH
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_LOAD_ENV_SH, expectedContent, string(content))
 		}
 	}
 	{
@@ -243,7 +261,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_LOAD_ENV_BAT
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_LOAD_ENV_BAT, expectedContent, string(content))
 		}
 	}
 	{
@@ -254,7 +272,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_DOCKERFILE
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_DOCKERFILE, expectedContent, string(content))
 		}
 	}
 	{
@@ -265,7 +283,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_CONFIG_LOCAL_YAML
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_CONFIG_LOCAL_YAML, expectedContent, string(content))
 		}
 	}
 	{
@@ -276,7 +294,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_CONFIG_YAML
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_CONFIG_YAML, expectedContent, string(content))
 		}
 	}
 	{
@@ -287,7 +305,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_DEF_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_INTERNAL_DEF_GO, expectedContent, string(content))
 		}
 	}
 	{
@@ -298,7 +316,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_SERVICE_PROVIDER_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_INTERNAL_SERVICE_PROVIDER_GO, expectedContent, string(content))
 		}
 	}
 	{
@@ -309,7 +327,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_APP_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_INTERNAL_APP_GO, expectedContent, string(content))
 		}
 	}
 	{
@@ -320,7 +338,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_EVENT_LOG_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_INTERNAL_EVENT_LOG_GO, expectedContent, string(content))
 		}
 	}
 	{
@@ -331,7 +349,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_INTERNAL_LOGGING_SERVICE_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_INTERNAL_LOGGING_SERVICE_GO, expectedContent, string(content))
 		}
 	}
 	{
@@ -342,7 +360,7 @@ func Test(t *testing.T) {
 		}
 		expectedContent := _EXPECT_FILE_APP_GO
 		if expectedContent != string(content) {
-			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+			t.Errorf("file %s expect:\n%s\ngot:\n%s\n", FILE_APP_GO, expectedContent, string(content))
 		}
 	}
 

@@ -139,7 +139,7 @@ type (
 		// app
 		Version     string ”resource:".VERSION"”
 		Signature   string ”resource:".SIGNATURE"”
-		ServiceName string ”yaml:"ServiceName"”
+		ServiceName string ”resource:".SERVICE_NAME"”
 
 		// host-fasthttp server
 		ListenAddress  string ”yaml:"ListenAddress"  arg:"listen-address;the combination of IP address and listen port"”
@@ -311,16 +311,20 @@ type EventLog struct {
 	evidence fasthttp.EventEvidence
 }
 
+// Flush implements middleware.EventLog.
+func (l EventLog) Flush() {
+}
+
+// OnError implements middleware.EventLog.
 func (l EventLog) OnError(ctx *fasthttp.RequestCtx, err interface{}, stackTrace []byte) {
 }
 
+// OnProcessRequest implements middleware.EventLog.
 func (l EventLog) OnProcessRequest(ctx *fasthttp.RequestCtx) {
 }
 
+// OnProcessRequestComplete implements middleware.EventLog.
 func (l EventLog) OnProcessRequestComplete(ctx *fasthttp.RequestCtx, flag response.ResponseFlag) {
-}
-
-func (l EventLog) Flush() {
 }
 `
 
@@ -339,15 +343,17 @@ type LoggingService struct {
 	logger *log.Logger
 }
 
+// ConfigureLogger implements middleware.LoggingService.
+func (s *LoggingService) ConfigureLogger(l *log.Logger) {
+	s.logger = l
+}
+
+// CreateEventLog implements middleware.LoggingService.
 func (s *LoggingService) CreateEventLog(ev fasthttp.EventEvidence) fasthttp.EventLog {
 	return EventLog{
 		logger:   s.logger,
 		evidence: ev,
 	}
-}
-
-func (s *LoggingService) ConfigureLogger(l *log.Logger) {
-	s.logger = l
 }
 `
 
@@ -377,8 +383,8 @@ func main() {
 		Middlewares(
 			fasthttp.UseRequestManager(&RequestManager{}),
 			fasthttp.UseXHttpMethodHeader(),
-			fasthttp.UseTracing(true),
 			fasthttp.UseLogging(&LoggingService{}),
+			fasthttp.UseTracing(true),
 			fasthttp.UseErrorHandler(func(ctx *fasthttp.RequestCtx, err interface{}) {
 				fail, ok := err.(*failure.Failure)
 				if ok {
