@@ -30,6 +30,7 @@ var (
 		FILE_CONFIG_YAML:                  FILE_CONFIG_YAML_TEMPLATE,
 		FILE_CONFIG_LOCAL_YAML:            FILE_CONFIG_LOCAL_YAML_TEMPLATE,
 		FILE_GITIGNORE:                    FILE_GITIGNORE_TEMPLATE,
+		FILE_SERVICE_NAME:                 FILE_SERVICE_NAME_TEMPLATE,
 		FILE_ENV:                          FILE_ENV_TEMPLATE,
 		FILE_ENV_SAMPLE:                   FILE_ENV_SAMPLE_TEMPLATE,
 		FILE_LOAD_ENV_SH:                  FILE_LOAD_ENV_SH_TEMPLATE,
@@ -102,8 +103,8 @@ func main() {
 		}
 
 		metadata := AppMetadata{
-			ModuleName: moduleName,
-			AppExeName: extractAppExeName(moduleName),
+			AppModuleName: moduleName,
+			AppExeName:    extractAppExeName(moduleName),
 		}
 		err = initProject(&metadata)
 		if err != nil {

@@ -31,6 +31,10 @@ env.*.bat
 env.*.sh
 `
 
+	FILE_SERVICE_NAME          = ".SERVICE_NAME"
+	FILE_SERVICE_NAME_TEMPLATE = `{{.AppModuleName}}
+`
+
 	FILE_LOAD_ENV_SH          = "loadenv.sh"
 	FILE_LOAD_ENV_SH_TEMPLATE = `#!/usr/bin/env bash
 
@@ -103,13 +107,14 @@ CMD ./{{.AppExeName}}
 `
 
 	FILE_CONFIG_LOCAL_YAML          = "config.local.yaml"
-	FILE_CONFIG_LOCAL_YAML_TEMPLATE = `address: ":10074"
+	FILE_CONFIG_LOCAL_YAML_TEMPLATE = `ListenAddress: ":10074"
 `
 
 	FILE_CONFIG_YAML          = "config.yaml"
-	FILE_CONFIG_YAML_TEMPLATE = `address: ":80"
-serverName: WebAPI
-useCompress: true
+	FILE_CONFIG_YAML_TEMPLATE = `
+ListenAddress: ":80"
+ServerName: {{.AppExeName}}
+UseCompress: true
 `
 
 	FILE_INTERNAL_DEF_GO          = path.Join("internal", "def.go")
@@ -122,7 +127,7 @@ import (
 )
 
 var (
-	logger *log.Logger = log.New(log.Writer(), {{printf "%q" (print "[" .ModuleName "] ")}}, log.LstdFlags|log.Lmsgprefix|log.LUTC)
+	defaultLogger *log.Logger = log.New(log.Writer(), {{printf "%q" (print "[" .AppModuleName "] ")}}, log.LstdFlags|log.Lmsgprefix|log.LUTC)
 )
 
 type (
@@ -132,13 +137,14 @@ type (
 		Environment string ”env:"Environment"”
 
 		// app
-		Version   string ”resource:".VERSION"”
-		Signature string ”resource:".SIGNATURE"”
+		Version     string ”resource:".VERSION"”
+		Signature   string ”resource:".SIGNATURE"”
+		ServiceName string ”yaml:"ServiceName"”
 
 		// host-fasthttp server
-		ListenAddress  string ”yaml:"address"        arg:"address;the combination of IP address and listen port"”
-		EnableCompress bool   ”yaml:"useCompress"    arg:"use-compress;indicates the response enable compress or not"”
-		ServerName     string ”yaml:"serverName"”
+		ListenAddress  string ”yaml:"ListenAddress"  arg:"listen-address;the combination of IP address and listen port"”
+		EnableCompress bool   ”yaml:"UseCompress"    arg:"use-compress;indicates the response enable compress or not"”
+		ServerName     string ”yaml:"ServerName"”
 
 		// tracing
 		JaegerTraceUrl string ”env:"JaegerTraceUrl"”
@@ -152,7 +158,7 @@ func (h *Host) Init(conf *Config) {
 		Name:                          conf.ServerName,
 		DisableKeepalive:              true,
 		DisableHeaderNamesNormalizing: true,
-		Logger:                        logger,
+		Logger:                        defaultLogger,
 	}
 	h.ListenAddress = conf.ListenAddress
 	h.EnableCompress = conf.EnableCompress
@@ -189,7 +195,7 @@ func (p *ServiceProvider) TextMapPropagator() propagation.TextMapPropagator {
 }
 
 func (p *ServiceProvider) Logger() *log.Logger {
-	return logger
+	return defaultLogger
 }
 `
 
@@ -231,15 +237,23 @@ func (app *App) OnStart(ctx context.Context) {
 }
 
 func (app *App) OnStop(ctx context.Context) {
+	{
+		defaultLogger.Printf("stoping TracerProvider")
+		tp := trace.GetTracerProvider()
+		err := tp.Shutdown(ctx)
+		if err != nil {
+			defaultLogger.Printf("stoping TracerProvider error: %+v", err)
+		}
+	}
 }
 
 func (app *App) ConfigureLogger(l *log.Logger) {
-	l.SetFlags(logger.Flags())
-	l.SetOutput(logger.Writer())
+	l.SetFlags(defaultLogger.Flags())
+	l.SetOutput(defaultLogger.Writer())
 }
 
 func (app *App) Logger() *log.Logger {
-	return logger
+	return defaultLogger
 }
 
 func (app *App) ConfigureTracerProvider() {
@@ -250,7 +264,7 @@ func (app *App) ConfigureTracerProvider() {
 	}
 
 	tp, err := trace.JaegerProvider(app.Config.JaegerTraceUrl,
-		trace.ServiceName(app.Config.ServerName),
+		trace.ServiceName(app.Config.ServiceName),
 		trace.Signature(app.Config.Signature),
 		trace.Version(app.Config.Version),
 		trace.Environment(app.Config.Environment),
@@ -258,7 +272,7 @@ func (app *App) ConfigureTracerProvider() {
 		trace.Pid(),
 	)
 	if err != nil {
-		logger.Fatal(err)
+		defaultLogger.Fatal(err)
 	}
 
 	trace.SetTracerProvider(tp)
@@ -341,7 +355,7 @@ func (s *LoggingService) ConfigureLogger(l *log.Logger) {
 	FILE_APP_GO_TEMPLATE = strings.ReplaceAll(`package main
 
 import (	
-	. "{{.ModuleName}}/internal"
+	. "{{.AppModuleName}}/internal"
 
 	"github.com/Bofry/config"
 	fasthttp "github.com/Bofry/host-fasthttp"
@@ -390,6 +404,6 @@ func main() {
 )
 
 type AppMetadata struct {
-	AppExeName string
-	ModuleName string
+	AppExeName    string
+	AppModuleName string
 }
