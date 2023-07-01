@@ -1,7 +1,3 @@
-github.com/Bofry/arg v0.2.0-alpha.20221111030208 h1:K8oecwLkaMe1+Bm+IuNFKz0XfF8nXfr7jwfTRJaycdw=
-github.com/Bofry/arg v0.2.0-alpha.20221111030208/go.mod h1:VQjJ1QLyjlq5RNxeDszIS9oTh861mqBuR8/5vSWOLWc=
-github.com/cstockton/go-conv v1.0.0 h1:zj/q/0MpQ/97XfiC9glWiohO8lhgR4TTnHYZifLTv6I=
-github.com/cstockton/go-conv v1.0.0/go.mod h1:HuiHkkRgOA0IoBNPC7ysG7kNpjDYlgM7Kj62yQPxjy4=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
