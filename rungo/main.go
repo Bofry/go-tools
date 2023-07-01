@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 )
@@ -50,32 +48,9 @@ func exit(code int) {
 func executeCommand(name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = os.Stdin
-
-	var (
-		stdout io.ReadCloser
-		stderr io.ReadCloser
-
-		err error
-	)
-
-	if stdout, err = cmd.StdoutPipe(); err != nil {
-		return err
-	}
-	if stderr, err = cmd.StderrPipe(); err != nil {
-		return err
-	}
-	reader := io.MultiReader(stdout, stderr)
-	scanner := bufio.NewScanner(reader)
-	go func() {
-		for scanner.Scan() {
-			fmt.Println(scanner.Text())
-		}
-	}()
-
-	if err = cmd.Start(); err != nil {
-		return err
-	}
-	return cmd.Wait()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func shift(pos *int) string {
