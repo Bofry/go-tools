@@ -129,14 +129,14 @@ func getAppModuleName() (string, error) {
 		attempts int = 0
 	)
 
-retry:
+again:
 	goModBytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if attempts < MAX_GO_MOD_FILE_DEPTH {
 				path = filepath.Join("../", path)
 				attempts++
-				goto retry
+				goto again
 			}
 		}
 		return "", err
