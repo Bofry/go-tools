@@ -4,6 +4,7 @@ const (
 	REQUEST_FILE_TEMPLATE string = `package {{.HandlerModuleName}}
 
 import (
+	"log"
 	"reflect"
 
 	. "{{.AppModuleName}}/internal"
@@ -22,6 +23,7 @@ type {{.HandlerName}} struct {
 }
 
 func (h *{{.HandlerName}}) Init() {
+	h.ServiceProvider.ConfigureLogger(log.Default())
 }
 
 // ProcessMessage implements MessageHandler.

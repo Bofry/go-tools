@@ -214,6 +214,12 @@ func (p *ServiceProvider) TextMapPropagator() propagation.TextMapPropagator {
 func (p *ServiceProvider) Logger() *log.Logger {
 	return defaultLogger
 }
+
+func (p *ServiceProvider) ConfigureLogger(l *log.Logger) {
+	l.SetOutput(p.Logger().Writer())
+	l.SetPrefix(p.Logger().Prefix())
+	l.SetFlags(p.Logger().Flags())
+}
 `
 
 	FILE_INTERNAL_APP_GO          = path.Join("internal", "app.go")

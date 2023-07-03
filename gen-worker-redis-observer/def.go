@@ -4,7 +4,7 @@ const (
 	MESSAGE_OBSERVER_FILE_TEMPLATE string = `package {{.ObserverModuleName}}
 
 import (
-	"fmt"
+	"log"
 	"reflect"
 
 	. "{{.AppModuleName}}/internal"
@@ -20,7 +20,7 @@ type {{.ObserverName}} struct {
 }
 
 func (obs *{{.ObserverName}}) Init() {
-	fmt.Println("GoTestStreamMessageObserver.Init()")
+	obs.ServiceProvider.ConfigureLogger(log.Default())
 }
 
 // OnAck implements redis.MessageObserver.
