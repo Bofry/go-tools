@@ -52,6 +52,7 @@ func main() {}
 
 import (
 	. "host-fasthttp-request-demo/internal"
+	"log"
 
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/tracing"
@@ -62,11 +63,15 @@ type HealthCheckRequest struct {
 	ServiceProvider *ServiceProvider
 }
 
-func (r *HealthCheckRequest) Ping(ctx *fasthttp.RequestCtx) {
-	// disable tracing
-	tracing.SpanFromRequestCtx(ctx).Disable(true)
+func (r *HealthCheckRequest) Init() {
+	r.ServiceProvider.ConfigureLogger(log.Default())
+}
 
-	response.Text.Success(ctx, "PONG")
+func (r *HealthCheckRequest) Get(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	sp.Argv(nil)
+
+	response.Text.Success(ctx, "OK")
 }
 `
 )

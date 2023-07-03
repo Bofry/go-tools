@@ -5,6 +5,7 @@ const (
 
 import (
 	. "{{.AppModuleName}}/internal"
+	"log"
 
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/tracing"
@@ -15,11 +16,15 @@ type {{.RequestName}} struct {
 	ServiceProvider *ServiceProvider
 }
 
-func (r *{{.RequestName}}) Ping(ctx *fasthttp.RequestCtx) {
-	// disable tracing
-	tracing.SpanFromRequestCtx(ctx).Disable(true)
+func (r *{{.RequestName}}) Init() {
+	r.ServiceProvider.ConfigureLogger(log.Default())
+}
 
-	response.Text.Success(ctx, "PONG")
+func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	sp.Argv(nil)
+
+	response.Text.Success(ctx, "OK")
 }
 `
 )
