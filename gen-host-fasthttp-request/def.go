@@ -22,7 +22,7 @@ func (r *{{.RequestName}}) Init() {
 
 func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
 	sp := tracing.SpanFromRequestCtx(ctx)
-	sp.Argv(nil)
+	_ = sp
 
 	response.Text.Success(ctx, "OK")
 }
