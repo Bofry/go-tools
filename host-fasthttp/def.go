@@ -398,7 +398,7 @@ func main() {
 				}
 			}),
 			fasthttp.UseUnhandledRequestHandler(func(ctx *fasthttp.RequestCtx) {
-				ctx.SetStatusCode(fasthttp.StatusNotFound)
+				ctx.NotFound()
 			}),
 		).
 		ConfigureConfiguration(func(service *config.ConfigurationService) {
