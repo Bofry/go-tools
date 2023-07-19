@@ -10,12 +10,12 @@ var (
 
 	FILE_ENV          = ".env"
 	FILE_ENV_TEMPLATE = `Environment=local
-JaegerTraceUrl=
+JAEGER_TRACE_URL=
 `
 
 	FILE_ENV_SAMPLE          = ".env.sample"
 	FILE_ENV_SAMPLE_TEMPLATE = `Environment=local
-JaegerTraceUrl=http://localhost:14268/api/traces
+JAEGER_TRACE_URL=http://localhost:14268/api/traces
 `
 
 	FILE_GITIGNORE          = ".gitignore"
@@ -147,7 +147,7 @@ type (
 		ServerName     string ”yaml:"ServerName"”
 
 		// tracing
-		JaegerTraceUrl string ”env:"JaegerTraceUrl"”
+		JaegerTraceUrl string ”env:"JAEGER_TRACE_URL"”
 
 		// put your configuration here
 	}

@@ -10,14 +10,14 @@ var (
 
 	FILE_ENV          = ".env"
 	FILE_ENV_TEMPLATE = `Environment=local
-RedisServer=127.0.0.1:6379
-JaegerTraceUrl=
+REDIS_SERVER=127.0.0.1:6379
+JAEGER_TRACE_URL=
 `
 
 	FILE_ENV_SAMPLE          = ".env.sample"
 	FILE_ENV_SAMPLE_TEMPLATE = `Environment=local
-RedisServer=127.0.0.1:6379,127.0.0.2:6379
-JaegerTraceUrl=http://localhost:14268/api/traces
+REDIS_SERVER=127.0.0.1:6379,127.0.0.2:6379
+JAEGER_TRACE_URL=http://localhost:14268/api/traces
 `
 
 	FILE_GITIGNORE          = ".gitignore"
@@ -109,11 +109,13 @@ CMD ./{{.AppExeName}}
 `
 
 	FILE_CONFIG_LOCAL_YAML          = "config.local.yaml"
-	FILE_CONFIG_LOCAL_YAML_TEMPLATE = `address: ":10074"
+	FILE_CONFIG_LOCAL_YAML_TEMPLATE = `
+RedisDB: 0
 `
 
 	FILE_CONFIG_YAML          = "config.yaml"
 	FILE_CONFIG_YAML_TEMPLATE = `
+RedisDB: 0
 RedisConsumerGroup: default
 RedisConsumerName: {{.AppModuleName}}
 RedisMaxInFlight: 8
@@ -150,7 +152,8 @@ type (
 		ServiceName string ”resource:".SERVICE_NAME"”
 
 		// redis
-		RedisAddresses           []string      ”env:"*RedisServer"         yaml:"-"”
+		RedisAddresses           []string      ”env:"*REDIS_SERVER"        yaml:"-"”
+		RedisDB                  int           ”env:"-"                    yaml:"RedisDB"”
 		RedisConsumerGroup       string        ”env:"-"                    yaml:"RedisConsumerGroup"”
 		RedisConsumerName        string        ”env:"-"                    yaml:"RedisConsumerName"”
 		RedisMaxInFlight         int64         ”env:"-"                    yaml:"RedisMaxInFlight"”
@@ -161,7 +164,7 @@ type (
 		RedisClaimOccurrenceRate int32         ”env:"-"                    yaml:"RedisClaimOccurrenceRate"”
 
 		// tracing
-		JaegerTraceUrl string ”env:"JaegerTraceUrl"”
+		JaegerTraceUrl string ”env:"JAEGER_TRACE_URL"”
 
 		// put your configuration here
 	}
@@ -170,6 +173,7 @@ type (
 func (h *Host) Init(conf *Config) {
 	h.RedisOption = &redis.UniversalOptions{
 		Addrs: conf.RedisAddresses,
+		DB:    conf.RedisDB,
 	}
 	h.ConsumerGroup = conf.RedisConsumerGroup
 	h.ConsumerName = conf.RedisConsumerName

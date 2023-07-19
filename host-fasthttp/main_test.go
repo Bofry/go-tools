@@ -83,7 +83,7 @@ type (
 		ServerName     string ”yaml:"ServerName"”
 
 		// tracing
-		JaegerTraceUrl string ”env:"JaegerTraceUrl"”
+		JaegerTraceUrl string ”env:"JAEGER_TRACE_URL"”
 
 		// put your configuration here
 	}
