@@ -182,7 +182,7 @@ import (
 
 type ServiceProvider struct {}
 
-func (p *ServiceProvider) Init(conf *Config) {
+func (p *ServiceProvider) Init(conf *Config, app *App) {
 	// initialize service provider components
 }
 
