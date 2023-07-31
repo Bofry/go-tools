@@ -80,11 +80,9 @@ func main() {
 
 	// resolve AST
 	for _, node := range f.Decls {
-		switch node.(type) {
-
+		switch realDecl := node.(type) {
 		case *ast.GenDecl:
-			genDecl := node.(*ast.GenDecl)
-			for _, spec := range genDecl.Specs {
+			for _, spec := range realDecl.Specs {
 				switch spec.(type) {
 				case *ast.TypeSpec:
 					var (

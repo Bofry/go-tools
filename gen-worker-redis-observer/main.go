@@ -83,12 +83,9 @@ func main() {
 
 	// resolve AST
 	for _, node := range f.Decls {
-		switch node.(type) {
-
+		switch realDecl := node.(type) {
 		case *ast.GenDecl:
-			genDecl := node.(*ast.GenDecl)
-
-			for _, spec := range genDecl.Specs {
+			for _, spec := range realDecl.Specs {
 				switch realSpec := spec.(type) {
 				case *ast.ValueSpec:
 					structExpr := lookupMessageObserverManager(realSpec)
@@ -241,7 +238,7 @@ func generateMessageObserverFile(structType *ast.StructType) (n int, err error) 
 		for RequestFilename, RequestTypename := range fileTypeNameMap {
 			fmt.Printf("generating '%s' ...", RequestFilename)
 
-			file, err := createRequestFile(RequestFilename, RequestTypename)
+			file, err := createRequestFile(RequestFilename)
 			if err != nil {
 				if os.IsExist(err) {
 					fmt.Println("skipped")
@@ -299,7 +296,7 @@ func resolveMessageObserverFileName(typename string) string {
 	return ""
 }
 
-func createRequestFile(filename, typename string) (*os.File, error) {
+func createRequestFile(filename string) (*os.File, error) {
 	path := filepath.Join(filename + ".go")
 
 	_, err := os.Stat(path)

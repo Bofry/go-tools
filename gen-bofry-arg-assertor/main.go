@@ -277,10 +277,9 @@ func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
 	var assertorTypes []*AssertorType
 
 	for _, node := range f.Decls {
-		switch node.(type) {
+		switch realDecl := node.(type) {
 		case *ast.GenDecl:
-			genDecl := node.(*ast.GenDecl)
-			for _, spec := range genDecl.Specs {
+			for _, spec := range realDecl.Specs {
 				switch specExpr := spec.(type) {
 				case *ast.TypeSpec:
 					switch typeExpr := specExpr.Type.(type) {

@@ -80,11 +80,9 @@ func main() {
 
 	// resolve AST
 	for _, node := range f.Decls {
-		switch node.(type) {
-
+		switch realDecl := node.(type) {
 		case *ast.GenDecl:
-			genDecl := node.(*ast.GenDecl)
-			for _, spec := range genDecl.Specs {
+			for _, spec := range realDecl.Specs {
 				switch spec.(type) {
 				case *ast.TypeSpec:
 					var (
@@ -160,7 +158,7 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 			if ok {
 				requestTypename := ident.Name
 
-				requestFilename := resolveRequestFileName(requestTypename)
+				requestFilename := normalizeRequestFileName(requestTypename)
 				if len(requestFilename) > 0 {
 					if existedTypeName, ok := requestFileNames[requestFilename]; ok {
 						// NOTE: it have not to be happen.
@@ -219,9 +217,9 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 	return count, nil
 }
 
-// Resolve the handler type name to file name.
+// Normalize the handler type name to file name.
 // e.g: EchoHandler to echoHandle, XMLHandler to xmlHandler.
-func resolveRequestFileName(typename string) string {
+func normalizeRequestFileName(typename string) string {
 	if strings.HasSuffix(typename, REQUEST_TYPE_SUFFIX) {
 		var (
 			runes  = []rune(typename)
