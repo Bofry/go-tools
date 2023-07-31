@@ -93,7 +93,7 @@ var (
 
 	AssertorTypeTemplate   *template.Template
 	ValueAssertionTemplate *template.Template
-	FileDirectiveTemplage  *template.Template
+	FileDirectiveTemplate  *template.Template
 )
 
 func init() {
@@ -102,7 +102,7 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
-		FileDirectiveTemplage = tmpl
+		FileDirectiveTemplate = tmpl
 	}
 
 	{
@@ -137,7 +137,7 @@ type AssertorFileWriter struct {
 
 func NewAssertorFileWriter() *AssertorFileWriter {
 	return &AssertorFileWriter{
-		fileDirectiveTemplage:  FileDirectiveTemplage,
+		fileDirectiveTemplage:  FileDirectiveTemplate,
 		assertorTypeTemplate:   AssertorTypeTemplate,
 		valueAssertionTemplate: ValueAssertionTemplate,
 	}
