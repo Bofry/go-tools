@@ -15,7 +15,7 @@ import (
 
 var _ app.MessageContent = new({{.MessageName}}ReqMessage)
 
-func (app *App) {{.MessageName}}(ctx *app.Context, message *app.Message) {
+func (ap *App) {{.MessageName}}(ctx *app.Context, message *app.Message) {
 	content := {{.MessageName}}ReqMessage{}
 	err := message.DecodeContent(&content)
 	if err != nil {
@@ -49,7 +49,7 @@ func (m *{{.MessageName}}ReqMessage) Validate() error {
 
 import "github.com/Bofry/host/app"
 
-func (app *App) {{.EventName}}(ctx *app.Context, event *app.Event) error {
+func (ap *App) {{.EventName}}(ctx *app.Context, event *app.Event) error {
 	return nil
 }
 `

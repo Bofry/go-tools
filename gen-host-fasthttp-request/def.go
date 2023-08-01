@@ -91,6 +91,8 @@ func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
 	WEBSOCKET_APP_FILE_TEMPLATE string = strings.ReplaceAll(`package {{.WebsocketAppModuleName}}
 
 import (
+	"bytes"
+	"log"
 	"{{.AppModuleName}}/internal"
 
 	"github.com/Bofry/host/app"
@@ -108,9 +110,23 @@ var Module = struct {
 	app.ModuleOptionCollection
 }{
 	ModuleOptionCollection: app.ModuleOptions(
-		app.WithProtocolResolver(func(format app.MessageFormat, payload []byte) string {
-			/* write your protocol resolving below */
-			return ""
+		app.WithProtocolResolver(func(format app.MessageFormat, payload []byte) (string, []byte) {
+			/* processing your protocol resolving below */
+			if len(payload) > 5 && payload[4] == '\n' {
+				return string(payload[:4]), payload[5:]
+			}
+			return "", payload
+		}),
+		app.WithProtocolEmitter(func(format app.MessageFormat, protocol string, body []byte) []byte {
+			/* processing your protocol emitting below */
+			if len(protocol) == 0 {
+				return body
+			}
+			return bytes.Join(
+				[][]byte{
+					[]byte(protocol + "\n"),
+					body,
+				}, nil)
 		}),
 	),
 }
@@ -121,6 +137,7 @@ type App struct {
 }
 
 func (ap *App) Init() {
+	ap.ServiceProvider.ConfigureLogger(log.Default())
 }
 
 func (ap *App) DefaultMessageHandler(ctx *app.Context, message *app.Message) {
