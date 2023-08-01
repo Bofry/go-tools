@@ -8,13 +8,14 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -26,6 +27,13 @@ const (
 	REQUEST_MANAGER_TYPE_NAME string = "RequestManager"
 	REQUEST_TYPE_SUFFIX       string = "Request"
 	HANDLER_MODULE_NAME       string = "handler"
+	WEBSOCKET_APP_DIR_PATH    string = "handler/websocket"
+	WEBSOCKET_APP_FILE_NAME   string = "app"
+
+	TAG_HIJACK_OPT_NAME string = "@hijack"
+
+	HIJACK_NONE      string = ""
+	HIJACK_WEBSOCKET string = "websocket"
 )
 
 var (
@@ -147,10 +155,27 @@ func exit(code int) {
 
 func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int, err error) {
 	var (
-		requestFileNames = make(map[string]string, len(structType.Fields.List))
+		handlerFileMap = make(map[string]string, len(structType.Fields.List))
 	)
 
 	for _, field := range structType.Fields.List {
+		var (
+			hijackType string = ""
+		)
+
+		// resolve tag
+		if field.Tag != nil && field.Tag.Kind == token.STRING {
+			tagLiteral, err := strconv.Unquote(field.Tag.Value)
+			if err != nil {
+				tagLiteral = field.Tag.Value
+			}
+			tag := reflect.StructTag(tagLiteral)
+			val, ok := tag.Lookup(TAG_HIJACK_OPT_NAME)
+			if ok {
+				hijackType = val
+			}
+		}
+
 		switch field.Type.(type) {
 		case *ast.StarExpr:
 			star := field.Type.(*ast.StarExpr)
@@ -158,59 +183,91 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 			if ok {
 				requestTypename := ident.Name
 
-				requestFilename := normalizeRequestFileName(requestTypename)
-				if len(requestFilename) > 0 {
-					if existedTypeName, ok := requestFileNames[requestFilename]; ok {
-						// NOTE: it have not to be happen.
-						throw(fmt.Sprintf("output file '%s' is ambiguous on request type name '%s' and '%s'",
-							requestFilename,
-							existedTypeName,
-							requestTypename))
-						exit(1)
-					}
-					requestFileNames[requestFilename] = requestTypename
+				if existedTypeName, ok := handlerFileMap[requestTypename]; ok {
+					// NOTE: it have not to be happen.
+					throw(fmt.Sprintf("output file '%s' is ambiguous on request type name '%s' and '%s'",
+						requestTypename,
+						existedTypeName,
+						requestTypename))
+					exit(1)
 				}
+				handlerFileMap[requestTypename] = hijackType
 			}
 		}
 	}
 
 	var count int = 0
-	if len(requestFileNames) > 0 {
+	if len(handlerFileMap) > 0 {
 		if _, err := os.Stat(handlerDir); os.IsNotExist(err) {
 			os.Mkdir(handlerDir, os.ModePerm)
 		}
 
-		for RequestFilename, RequestTypename := range requestFileNames {
-			fmt.Printf("generating '%s' ...", RequestFilename)
+		for handlerName, hijackType := range handlerFileMap {
+			var (
+				filename = getHandlerFileName(handlerName)
+			)
+			if len(filename) > 0 {
+				var (
+					writer FileWriter = nil
+				)
 
-			file, err := createRequestFile(RequestFilename, RequestTypename, handlerDir)
-			if err != nil {
-				if os.IsExist(err) {
+				fmt.Printf("generating '%s' ...", handlerName)
+
+				file, err := createFile(filename, handlerDir)
+				if err != nil {
+					if os.IsExist(err) {
+						fmt.Println("skipped")
+						continue
+					} else {
+						return count, err
+					}
+				}
+				defer file.Close()
+
+				switch hijackType {
+				case HIJACK_NONE:
+					writer = &HttpRequestFileWriter{
+						AppModuleName:     appModuleName,
+						HandlerModuleName: HANDLER_MODULE_NAME,
+						RequestName:       handlerName,
+						RequestFile:       file,
+					}
+
+				case HIJACK_WEBSOCKET:
+					websocketAppModuleName := getWebsocketAppModuleName(handlerName)
+					websocketAppFile, err := createWebsocketAppFile(websocketAppModuleName)
+					if err != nil {
+						if os.IsExist(err) {
+							fmt.Println("skipped")
+							continue
+						} else {
+							return count, err
+						}
+					}
+					defer websocketAppFile.Close()
+
+					writer = &WebsocketRequestFileWriter{
+						AppModuleName:          appModuleName,
+						HandlerModuleName:      HANDLER_MODULE_NAME,
+						RequestName:            handlerName,
+						WebsocketAppModuleName: websocketAppModuleName,
+						RequestFile:            file,
+						WebsocketAppFile:       websocketAppFile,
+					}
+				}
+
+				if writer == nil {
 					fmt.Println("skipped")
 					continue
-				} else {
-					return count, err
 				}
-			}
-			defer file.Close()
 
-			metadata := FileMetadata{
-				AppModuleName:     appModuleName,
-				HandlerModuleName: HANDLER_MODULE_NAME,
-				RequestName:       RequestTypename,
-			}
-
-			tmpl, err := template.New("").Parse(REQUEST_FILE_TEMPLATE)
-			if err != nil {
-				return count, err
-			}
-
-			err = tmpl.Execute(file, metadata)
-			if err != nil {
-				fmt.Println("failed")
-			} else {
-				fmt.Println("ok")
-				count++
+				err = writer.Write()
+				if err != nil {
+					fmt.Println("failed")
+				} else {
+					fmt.Println("ok")
+					count++
+				}
 			}
 		}
 	}
@@ -219,31 +276,41 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 
 // Normalize the handler type name to file name.
 // e.g: EchoHandler to echoHandle, XMLHandler to xmlHandler.
-func normalizeRequestFileName(typename string) string {
-	if strings.HasSuffix(typename, REQUEST_TYPE_SUFFIX) {
-		var (
-			runes  = []rune(typename)
-			length = len(runes)
-		)
+func normalizeFileName(typename string) string {
+	var (
+		runes  = []rune(typename)
+		length = len(runes)
+	)
 
-		if ch := runes[0]; unicode.IsUpper(rune(ch)) && unicode.IsLetter(ch) {
-			var pos int = 0
-			for i := 0; i < length; i++ {
-				if unicode.IsUpper(runes[i]) && unicode.IsLower(runes[i+1]) {
-					pos = i
-					break
-				}
+	if ch := runes[0]; unicode.IsUpper(rune(ch)) && unicode.IsLetter(ch) {
+		var pos int = 0
+		for i := 0; i < length; i++ {
+			if unicode.IsUpper(runes[i]) && unicode.IsLower(runes[i+1]) {
+				pos = i
+				break
 			}
-			if pos == 0 {
-				pos++
-			}
-			return strings.ToLower(string(runes[:pos])) + string(runes[pos:])
 		}
+		if pos == 0 {
+			pos++
+		}
+		return strings.ToLower(string(runes[:pos])) + string(runes[pos:])
 	}
 	return ""
 }
 
-func createRequestFile(filename, typename string, handlerDir string) (*os.File, error) {
+func getHandlerFileName(handlerName string) string {
+	if strings.HasSuffix(handlerName, REQUEST_TYPE_SUFFIX) && len(handlerName) > len(REQUEST_TYPE_SUFFIX) {
+		return normalizeFileName(handlerName)
+	}
+	return ""
+}
+
+func getWebsocketAppModuleName(handlerName string) string {
+	name := handlerName[:len(handlerName)-len(REQUEST_TYPE_SUFFIX)]
+	return strings.ToLower(name)
+}
+
+func createFile(filename string, handlerDir string) (*os.File, error) {
 	path := filepath.Join(handlerDir, filename+".go")
 
 	_, err := os.Stat(path)
@@ -254,6 +321,15 @@ func createRequestFile(filename, typename string, handlerDir string) (*os.File, 
 		return nil, err
 	}
 	return nil, os.ErrExist
+}
+
+func createWebsocketAppFile(websocketAppModuleName string) (*os.File, error) {
+	websocketAppDir := path.Join(WEBSOCKET_APP_DIR_PATH, websocketAppModuleName)
+	if err := os.MkdirAll(websocketAppDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	return createFile(WEBSOCKET_APP_FILE_NAME, websocketAppDir)
 }
 
 func importHandlerModulePath(fset *token.FileSet, f *ast.File) error {

@@ -14,7 +14,7 @@ var (
 go 1.19
 
 require (
-	github.com/Bofry/host-fasthttp v0.1.2-0.20230611163728-f0c67fe9af5b
+	github.com/Bofry/host-fasthttp v0.2.0-alpha.20230703153647.0.20230723153100-a95def19beda
 	github.com/Bofry/trace v0.0.0-20230327070031-663464d25b86
 	github.com/valyala/fasthttp v1.45.0
 )
@@ -25,6 +25,7 @@ require (
 type RequestManager struct {
 	/* put your request handler here */
 	*HealthCheckRequest ”url:"/healthcheck"”
+	*ChatRequest        ”url:"/chat"         @hijack:"websocket"”
 }
 
 func main() {}	
@@ -43,6 +44,7 @@ import . "host-fasthttp-request-demo/handler"
 type RequestManager struct {
 	/* put your request handler here */
 	*HealthCheckRequest ”url:"/healthcheck"”
+	*ChatRequest        ”url:"/chat"         @hijack:"websocket"”
 }
 
 func main() {}
@@ -51,8 +53,8 @@ func main() {}
 	_EXPECT_FILE_HEALTHCHECK_REQUEST_GO = `package handler
 
 import (
-	. "host-fasthttp-request-demo/internal"
 	"log"
+	. "host-fasthttp-request-demo/internal"
 
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/tracing"
@@ -74,6 +76,102 @@ func (r *HealthCheckRequest) Get(ctx *fasthttp.RequestCtx) {
 	response.Text.Success(ctx, "OK")
 }
 `
+
+	_EXPECT_FILE_CHAT_REQUEST_GO = `package handler
+
+import (
+	"context"
+	"log"
+	"host-fasthttp-request-demo/handler/websocket/chat"
+	. "host-fasthttp-request-demo/internal"
+
+	"github.com/Bofry/host-fasthttp/app/websocket"
+	"github.com/Bofry/host-fasthttp/response"
+	"github.com/Bofry/host-fasthttp/tracing"
+	"github.com/Bofry/host/app"
+	"github.com/valyala/fasthttp"
+)
+
+type ChatRequest struct {
+	ServiceProvider *ServiceProvider
+	Config          *Config
+
+	WesocketApp *app.Application
+}
+
+func (r *ChatRequest) Init() {
+	r.ServiceProvider.ConfigureLogger(log.Default())
+
+	// setup WebsocketApp
+	{
+		r.WesocketApp = app.Init(&chat.Module,
+			app.BindServiceProvider(r.ServiceProvider),
+			app.BindConfig(r.Config),
+			app.BindEventClient(app.MultiEventClient{
+				// register channel and EventClient map herre
+			}),
+		)
+		r.WesocketApp.Start(context.Background())
+	}
+}
+
+func (r *ChatRequest) Get(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	_ = sp
+
+	client := websocket.NewMessageClient(ctx)
+	client.RegisterCloseHandler(func(mc app.MessageClient) {
+		// register close processing here
+	})
+	r.WesocketApp.MessageClientManager().Join(client)
+
+	response.Text.Success(ctx, "OK")
+}
+`
+
+	_EXPECT_FILE_CHAT_APP_GO = strings.ReplaceAll(`package chat
+
+import (
+	. "host-fasthttp-request-demo/internal"
+
+	"github.com/Bofry/host/app"
+)
+
+//go:generate gen-host-app-handler
+var Module = struct {
+	/* put your MessageHandler below */
+	Echo app.MessageHandler ”protocol:"????"”
+
+	/* put your EventHandler below */
+	EchoEvent app.EventHandler ”channel:"????"”
+
+	*App
+	app.ModuleOptionCollection
+}{
+	ModuleOptionCollection: app.ModuleOptions(
+		app.WithProtocolResolver(func(format app.MessageFormat, payload []byte) string {
+			/* write your protocol resolving below */
+			return ""
+		}),
+	),
+}
+
+type App struct {
+	ServiceProvider *ServiceProvider
+	Config          *Config
+}
+
+func (ap *App) Init() {
+}
+
+func (ap *App) DefaultMessageHandler(ctx *app.Context, message *app.Message) {
+
+}
+
+func (ap *App) DefaultEventHandler(ctx *app.Context, event *app.Event) error {
+	return nil
+}
+`, "”", "`")
 )
 
 func Test(t *testing.T) {
@@ -120,6 +218,26 @@ func Test(t *testing.T) {
 		expectedContent := _EXPECT_FILE_HEALTHCHECK_REQUEST_GO
 		if expectedContent != string(content) {
 			t.Errorf("healthCheckRequest.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+		}
+	}
+	{
+		content, err := readFile(tmp, "chatRequest.go", "handler")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_CHAT_REQUEST_GO
+		if expectedContent != string(content) {
+			t.Errorf("chatRequest.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+		}
+	}
+	{
+		content, err := readFile(tmp, "app.go", "handler/websocket/chat")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_CHAT_APP_GO
+		if expectedContent != string(content) {
+			t.Errorf("chatRequest.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
 		}
 	}
 }
