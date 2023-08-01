@@ -92,8 +92,8 @@ type (
 func (h *Host) Init(conf *Config) {
 	h.Server = &fasthttp.Server{
 		Name:                          conf.ServerName,
-		DisableKeepalive:              true,
-		DisableHeaderNamesNormalizing: true,
+		DisableKeepalive:              false,
+		DisableHeaderNamesNormalizing: false,
 		Logger:                        defaultLogger,
 	}
 	h.ListenAddress = conf.ListenAddress
