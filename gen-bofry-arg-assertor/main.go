@@ -15,6 +15,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	_ "github.com/Bofry/arg"
 )
 
 const (
@@ -222,7 +224,7 @@ func parseStructTagNamesAnnotation(key string, structType *ast.StructType, comme
 	return nil
 }
 
-func findAssertionType(ident *ast.Ident, info *types.Info) string {
+func findAssertionType(ident *ast.Ident, info *types.Info, ptr bool) string {
 	var (
 		signatures []string = []string{
 			ident.Name,
@@ -240,19 +242,30 @@ func findAssertionType(ident *ast.Ident, info *types.Info) string {
 	for _, signature := range signatures {
 		switch signature {
 		case "encoding/json.Number":
+			if ptr {
+				return NUMBER_PTR_ASSERTION_TYPE
+			}
 			return NUMBER_ASSERTION_TYPE
 		case "net.IP":
 			return IP_ASSERTION_TYPE
 		case "string":
+			if ptr {
+				return STRING_PTR_ASSERTION_TYPE
+			}
 			return STRING_ASSERTION_TYPE
 		case "int", "int8", "int16", "int32", "int64":
+			if ptr {
+				return INT_PTR_ASSERTION_TYPE
+			}
 			return INT_ASSERTION_TYPE
 		case "float32", "float64":
+			if ptr {
+				return FLOAT_PTR_ASSERTION_TYPE
+			}
 			return FLOAT_ASSERTION_TYPE
 		case "bool":
 			return BOOL_ASSERTION_TYPE
 		}
-
 	}
 	return VALUE_ASSERTION_TYPE
 }
@@ -363,7 +376,8 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 			case *ast.Ident:
 				fieldType = typedExpr.Name
 
-				assertionType = findAssertionType(typedExpr, info)
+				ptr := len(fieldTypeStar) > 0
+				assertionType = findAssertionType(typedExpr, info, ptr)
 				stop = true
 			case *ast.StarExpr:
 				expr = typedExpr.X
@@ -375,7 +389,12 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 					fieldType = identExpr.Name + "." + typedExpr.Sel.Name
 				}
 
-				assertionType = findAssertionType(typedExpr.Sel, info)
+				ptr := len(fieldTypeStar) > 0
+				assertionType = findAssertionType(typedExpr.Sel, info, ptr)
+				stop = true
+			case *ast.MapType,
+				*ast.ArrayType:
+				assertionType = VALUE_ASSERTION_TYPE
 				stop = true
 			default:
 				return fmt.Errorf("unsupported field type %T", expr)
@@ -400,6 +419,9 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 				for _, tagname := range tagnames {
 					// found !
 					if v, ok := tag.Lookup(tagname); ok {
+						if strings.HasPrefix(v, "*") {
+							v = v[1:]
+						}
 						fieldTag = v
 						break
 					}

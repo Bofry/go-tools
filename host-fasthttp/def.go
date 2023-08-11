@@ -369,6 +369,8 @@ func (s *LoggingService) CreateEventLog(ev fasthttp.EventEvidence) fasthttp.Even
 import (	
 	. "{{.AppModuleName}}/internal"
 
+	_ "github.com/Bofry/arg"
+
 	"github.com/Bofry/config"
 	fasthttp "github.com/Bofry/host-fasthttp"
 	"github.com/Bofry/host-fasthttp/handlers"

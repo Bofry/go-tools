@@ -114,6 +114,8 @@ func (h *Host) OnError(err error) (disposed bool) {
 import (	
 	. "host-fasthttp-demo/internal"
 
+	_ "github.com/Bofry/arg"
+
 	"github.com/Bofry/config"
 	fasthttp "github.com/Bofry/host-fasthttp"
 	"github.com/Bofry/host-fasthttp/handlers"
@@ -177,7 +179,7 @@ func Test(t *testing.T) {
 		"init",
 		"host-fasthttp-demo",
 		"-v",
-		"v0.2.0-alpha.20230619171940",
+		"v0.2.0",
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
 	osExit = func(i int) {

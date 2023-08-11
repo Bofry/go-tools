@@ -1,13 +1,17 @@
 package main
 
 const (
-	BOOL_ASSERTION_TYPE   = "bool"
-	STRING_ASSERTION_TYPE = "string"
-	INT_ASSERTION_TYPE    = "int"
-	FLOAT_ASSERTION_TYPE  = "float"
-	NUMBER_ASSERTION_TYPE = "number"
-	VALUE_ASSERTION_TYPE  = "value"
-	IP_ASSERTION_TYPE     = "ip"
+	BOOL_ASSERTION_TYPE       = "bool"
+	STRING_ASSERTION_TYPE     = "string"
+	STRING_PTR_ASSERTION_TYPE = "*string"
+	INT_ASSERTION_TYPE        = "int"
+	INT_PTR_ASSERTION_TYPE    = "*int"
+	FLOAT_ASSERTION_TYPE      = "float"
+	FLOAT_PTR_ASSERTION_TYPE  = "*float"
+	NUMBER_ASSERTION_TYPE     = "number"
+	NUMBER_PTR_ASSERTION_TYPE = "*number"
+	VALUE_ASSERTION_TYPE      = "value"
+	IP_ASSERTION_TYPE         = "ip"
 )
 
 type (

@@ -6,8 +6,6 @@ import (
 	"path"
 	"strings"
 	"testing"
-
-	_ "github.com/Bofry/arg"
 )
 
 var (

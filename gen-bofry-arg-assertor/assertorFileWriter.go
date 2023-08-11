@@ -33,7 +33,15 @@ func (argv *{{.SourceTypeName}}) Assertor() *{{.Name}} {
 
 	ARGV_STRING_ASSERTION_TEMPLATE = `
 func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.StringValidator) error {
-	return arg.Strings.Assert({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+	return arg.Strings.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+		validators...,
+	)
+}
+`
+
+	ARGV_STRING_PTR_ASSERTION_TEMPLATE = `
+func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.StringPtrValidator) error {
+	return arg.StringPtr.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
 		validators...,
 	)
 }
@@ -41,7 +49,15 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.StringValidator) erro
 
 	ARGV_NUMBER_ASSERTION_TEMPLATE = `
 func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.NumberValidator) error {
-	return arg.Numbers.Assert({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+	return arg.Numbers.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+		validators...,
+	)
+}
+`
+
+	ARGV_NUMBER_PTR_ASSERTION_TEMPLATE = `
+func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.NumberPtrValidator) error {
+	return arg.NumberPtr.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
 		validators...,
 	)
 }
@@ -49,7 +65,15 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.NumberValidator) erro
 
 	ARGV_FLOAT_ASSERTION_TEMPLATE = `
 func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.FloatValidator) error {
-	return arg.Floats.Assert({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+	return arg.Floats.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+		validators...,
+	)
+}
+`
+
+	ARGV_FLOAT_PTR_ASSERTION_TEMPLATE = `
+func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.FloatPtrValidator) error {
+	return arg.FloatPtr.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
 		validators...,
 	)
 }
@@ -57,7 +81,19 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.FloatValidator) error
 
 	ARGV_INT_ASSERTION_TEMPLATE = `
 func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.IntValidator) error {
-	return arg.Ints.Assert(int64({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}}), {{printf "%q" .Tag}},
+	return arg.Ints.Assert(int64(assertor.argv.{{.Name}}), {{printf "%q" .Tag}},
+		validators...,
+	)
+}
+`
+
+	ARGV_INT_PTR_ASSERTION_TEMPLATE = `
+func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.IntPtrValidator) error {
+	var v *int64 = nil
+	if assertor.argv.{{.Name}} != nil {
+		*v = int64({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}})
+	}
+	return arg.IntPtr.Assert(v, {{printf "%q" .Tag}},
 		validators...,
 	)
 }
@@ -65,7 +101,7 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.IntValidator) error {
 
 	ARGV_VALUE_ASSERTION_TEMPLATE = `
 func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.ValueValidator) error {
-	return arg.Values.Assert({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
+	return arg.Values.Assert(assertor.argv.{{.Name}}, {{printf "%q" .Tag}},
 		validators...,
 	)
 }
@@ -82,13 +118,17 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.IPValidator) error {
 
 var (
 	FieldAssertionMap map[string]string = map[string]string{
-		BOOL_ASSERTION_TYPE:   ARGV_NONE_ASSERTION_TEMPLATE,
-		STRING_ASSERTION_TYPE: ARGV_STRING_ASSERTION_TEMPLATE,
-		INT_ASSERTION_TYPE:    ARGV_INT_ASSERTION_TEMPLATE,
-		FLOAT_ASSERTION_TYPE:  ARGV_FLOAT_ASSERTION_TEMPLATE,
-		NUMBER_ASSERTION_TYPE: ARGV_NUMBER_ASSERTION_TEMPLATE,
-		VALUE_ASSERTION_TYPE:  ARGV_VALUE_ASSERTION_TEMPLATE,
-		IP_ASSERTION_TYPE:     ARGV_IP_ASSERTION_TEMPLATE,
+		BOOL_ASSERTION_TYPE:       ARGV_NONE_ASSERTION_TEMPLATE,
+		STRING_ASSERTION_TYPE:     ARGV_STRING_ASSERTION_TEMPLATE,
+		STRING_PTR_ASSERTION_TYPE: ARGV_STRING_PTR_ASSERTION_TEMPLATE,
+		INT_ASSERTION_TYPE:        ARGV_INT_ASSERTION_TEMPLATE,
+		INT_PTR_ASSERTION_TYPE:    ARGV_INT_PTR_ASSERTION_TEMPLATE,
+		FLOAT_ASSERTION_TYPE:      ARGV_FLOAT_ASSERTION_TEMPLATE,
+		FLOAT_PTR_ASSERTION_TYPE:  ARGV_FLOAT_PTR_ASSERTION_TEMPLATE,
+		NUMBER_ASSERTION_TYPE:     ARGV_NUMBER_ASSERTION_TEMPLATE,
+		NUMBER_PTR_ASSERTION_TYPE: ARGV_NUMBER_PTR_ASSERTION_TEMPLATE,
+		VALUE_ASSERTION_TYPE:      ARGV_VALUE_ASSERTION_TEMPLATE,
+		IP_ASSERTION_TYPE:         ARGV_IP_ASSERTION_TEMPLATE,
 	}
 
 	AssertorTypeTemplate   *template.Template
