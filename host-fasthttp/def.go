@@ -376,6 +376,7 @@ import (
 	"github.com/Bofry/host-fasthttp/handlers"
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/response/failure"
+	"github.com/Bofry/httparg"
 )
 
 //go:generate gen-host-fasthttp-request
@@ -386,6 +387,11 @@ type RequestManager struct {
 }
 
 func main() {
+	// register httparg error handler
+	httparg.RegistryService.SetupErrorHandler(func(err error) {
+		failure.ThrowFailureMessage(failure.INVALID_ARGUMENT, err.Error())
+	})
+
 	app := App{}
 	fasthttp.Startup(&app).
 		Middlewares(
@@ -397,6 +403,9 @@ func main() {
 				fail, ok := err.(*failure.Failure)
 				if ok {
 					response.Json.Failure(ctx, fail, fasthttp.StatusBadRequest)
+				}
+				if v, ok := err.(error); ok {
+					response.Json.Failure(ctx, v, fasthttp.StatusBadRequest)
 				}
 			}),
 			fasthttp.UseUnhandledRequestHandler(func(ctx *fasthttp.RequestCtx) {
