@@ -89,7 +89,7 @@ func (assertor *ProtagonistArgvAssertor) Timestamp(validators ...arg.IntPtrValid
 	var v *int64 = nil
 	if assertor.argv.Timestamp != nil {
 		var scalar = int64(*assertor.argv.Timestamp)
-		*v = &scalar
+		v = &scalar
 	}
 	return arg.IntPtr.Assert(v, "timestamp",
 		validators...,
