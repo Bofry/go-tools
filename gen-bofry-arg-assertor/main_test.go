@@ -73,8 +73,8 @@ func (assertor *ProtagonistArgvAssertor) Age(validators ...arg.IntValidator) err
 	)
 }
 
-func (assertor *ProtagonistArgvAssertor) Status(validators ...arg.StringValidator) error {
-	return arg.Strings.Assert(*assertor.argv.Status, "status",
+func (assertor *ProtagonistArgvAssertor) Status(validators ...arg.StringPtrValidator) error {
+	return arg.StringPtr.Assert(assertor.argv.Status, "status",
 		validators...,
 	)
 }
@@ -85,20 +85,25 @@ func (assertor *ProtagonistArgvAssertor) IP(validators ...arg.IPValidator) error
 	)
 }
 
-func (assertor *ProtagonistArgvAssertor) Timestamp(validators ...arg.IntValidator) error {
-	return arg.Ints.Assert(int64(*assertor.argv.Timestamp), "timestamp",
+func (assertor *ProtagonistArgvAssertor) Timestamp(validators ...arg.IntPtrValidator) error {
+	var v *int64 = nil
+	if assertor.argv.Timestamp != nil {
+		var scalar = int64(*assertor.argv.Timestamp)
+		*v = &scalar
+	}
+	return arg.IntPtr.Assert(v, "timestamp",
 		validators...,
 	)
 }
 
 func (assertor *ProtagonistArgvAssertor) State(validators ...arg.ValueValidator) error {
-	return arg.Values.Assert(*assertor.argv.State, "state",
+	return arg.Values.Assert(assertor.argv.State, "state",
 		validators...,
 	)
 }
 
-func (assertor *ProtagonistArgvAssertor) Token(validators ...arg.NumberValidator) error {
-	return arg.Numbers.Assert(*assertor.argv.Token, "token",
+func (assertor *ProtagonistArgvAssertor) Token(validators ...arg.NumberPtrValidator) error {
+	return arg.NumberPtr.Assert(assertor.argv.Token, "token",
 		validators...,
 	)
 }

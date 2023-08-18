@@ -143,7 +143,8 @@ func (assertor *ProtagonistArgvAssertor) IP(validators ...arg.IPValidator) error
 func (assertor *ProtagonistArgvAssertor) Timestamp(validators ...arg.IntPtrValidator) error {
 	var v *int64 = nil
 	if assertor.argv.Timestamp != nil {
-		*v = int64(*assertor.argv.Timestamp)
+		var scalar = int64(*assertor.argv.Timestamp)
+		*v = &scalar
 	}
 	return arg.IntPtr.Assert(v, "timestamp",
 		validators...,
