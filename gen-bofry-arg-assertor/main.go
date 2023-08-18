@@ -47,11 +47,10 @@ func init() {
 
 func main() {
 	var (
-		err error
+		outfile string
+		err     error
 	)
 	flag.Parse()
-
-	fmt.Println(gofile)
 
 	if gofile == "" {
 		gofile = os.Getenv("GOFILE")
@@ -59,6 +58,14 @@ func main() {
 			throw("No file to parse.")
 			exit(1)
 		}
+	}
+
+	fmt.Println(gofile)
+
+	outfile = filepath.Join(extractfilename(gofile) + ARGV_ASSERTOR_TYPE_SUFFIX + "_gen.go")
+	if f, _ := os.Stat(outfile); f != nil {
+		fmt.Printf("%s (skipped)\n", outfile)
+		exit(0)
 	}
 
 	// Type-check the package.
@@ -84,14 +91,13 @@ func main() {
 	}
 
 	writer := NewAssertorFileWriter()
-	outputFile := filepath.Join(extractfilename(gofile) + ARGV_ASSERTOR_TYPE_SUFFIX + "_gen.go")
 
-	if err = writeFile(outputFile, writer, file); err != nil {
+	if err = writeFile(outfile, writer, file); err != nil {
 		throw(err.Error())
 		exit(1)
 	}
 
-	if err = execCmd("gofmt", "-w", outputFile); err != nil {
+	if err = execCmd("gofmt", "-w", outfile); err != nil {
 		throw(err.Error())
 		exit(1)
 	}
@@ -293,12 +299,12 @@ func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
 		switch realDecl := node.(type) {
 		case *ast.GenDecl:
 			for _, spec := range realDecl.Specs {
-				switch specExpr := spec.(type) {
+				switch realSpec := spec.(type) {
 				case *ast.TypeSpec:
-					switch typeExpr := specExpr.Type.(type) {
+					switch typeExpr := realSpec.Type.(type) {
 					case *ast.StructType:
 						var (
-							structName = specExpr.Name.Name
+							structName = realSpec.Name.Name
 						)
 
 						if strings.HasSuffix(structName, ARGV_TYPE_SUFFIX) {

@@ -92,7 +92,7 @@ func (assertor *{{.TypeName}}) {{.Name}}(validators ...arg.IntPtrValidator) erro
 	var v *int64 = nil
 	if assertor.argv.{{.Name}} != nil {
 		var scalar = int64({{.ArgvFieldTypeStar}}assertor.argv.{{.Name}})
-		*v = &scalar
+		v = &scalar
 	}
 	return arg.IntPtr.Assert(v, {{printf "%q" .Tag}},
 		validators...,
