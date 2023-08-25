@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -27,6 +28,8 @@ const (
 )
 
 var (
+	argvTypeRegexp = regexp.MustCompile(`Argv[[:upper:]]?\w*$`)
+
 	osExit func(int) = os.Exit
 	gofile string
 )
@@ -307,7 +310,7 @@ func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
 							structName = realSpec.Name.Name
 						)
 
-						if strings.HasSuffix(structName, ARGV_TYPE_SUFFIX) {
+						if argvTypeRegexp.MatchString(structName) {
 							assertorType := &AssertorType{
 								SourceTypeName: structName,
 								Name:           structName + ARGV_ASSERTOR_TYPE_SUFFIX,
