@@ -32,7 +32,7 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
 	apk add --no-cache gcc musl-dev && \
 	apk add git && \
 	apk update && \
-	apk upgrade 
+	apk upgrade
 
 # RUN go version
 ADD . $GOPATH/src/app
@@ -111,7 +111,7 @@ func (h *Host) OnError(err error) (disposed bool) {
 	_EXPECT_FILE_INTERNAL_LOGGING_SERVICE_GO  = FILE_INTERNAL_LOGGING_SERVICE_GO_TEMPLATE
 	_EXPECT_FILE_APP_GO                       = strings.ReplaceAll(`package main
 
-import (	
+import (
 	. "host-fasthttp-demo/internal"
 
 	_ "github.com/Bofry/arg"
