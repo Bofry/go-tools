@@ -23,6 +23,7 @@ import (
 const (
 	ARGV_TYPE_SUFFIX          string = "Argv"
 	ARGV_FIELD_TAG_DIRECTIVE  string = "^"
+	ARGV_DASH_TAG_VALUE       string = "-"
 	ARGV_STRUCT_TAG_DIRECTIVE string = "tag"
 	ARGV_ASSERTOR_TYPE_SUFFIX string = "Assertor"
 )
@@ -355,7 +356,9 @@ func fillAssertorType(ref *AssertorType, structType *ast.StructType, info *types
 		}
 
 		// append assertion
-		assertions = append(assertions, assertion)
+		if !assertion.Skipped {
+			assertions = append(assertions, assertion)
+		}
 	}
 
 	// exports
@@ -371,10 +374,42 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 		fieldType     string
 		fieldTypeStar string
 		assertionType string
+		skipped       bool
 	)
 
-	// resolve type
+	// resolve tag
 	{
+		if field.Tag.Kind == token.STRING {
+			content, err := strconv.Unquote(field.Tag.Value)
+			if err != nil {
+				return fmt.Errorf("bad struct tag %q at %d", field.Tag.Value, field.Tag.ValuePos)
+			}
+			tag := reflect.StructTag(content)
+
+			// use field specifiec tag name
+			if tagname, ok := tag.Lookup(ARGV_FIELD_TAG_DIRECTIVE); ok {
+				if tagname == "" || tagname == ARGV_DASH_TAG_VALUE {
+					skipped = true
+				}
+				fieldTag = tag.Get(tagname)
+			} else {
+				// use default struct tag name
+				for _, tagname := range tagnames {
+					// found !
+					if v, ok := tag.Lookup(tagname); ok {
+						if strings.HasPrefix(v, "*") {
+							v = v[1:]
+						}
+						fieldTag = v
+						break
+					}
+				}
+			}
+		}
+	}
+
+	// resolve type
+	if !skipped {
 		var (
 			expr = field.Type
 			stop = false
@@ -411,41 +446,13 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 		}
 	}
 
-	// resolve tag
-	{
-		if field.Tag.Kind == token.STRING {
-			content, err := strconv.Unquote(field.Tag.Value)
-			if err != nil {
-				return fmt.Errorf("bad struct tag %q at %d", field.Tag.Value, field.Tag.ValuePos)
-			}
-			tag := reflect.StructTag(content)
-
-			// use field specifiec tag name
-			if tagname, ok := tag.Lookup(ARGV_FIELD_TAG_DIRECTIVE); ok {
-				fieldTag = tag.Get(tagname)
-			} else {
-				// use default struct tag name
-				for _, tagname := range tagnames {
-					// found !
-					if v, ok := tag.Lookup(tagname); ok {
-						if strings.HasPrefix(v, "*") {
-							v = v[1:]
-						}
-						fieldTag = v
-						break
-					}
-				}
-			}
-
-		}
-	}
-
 	// exports
 	ref.Name = fieldName
 	ref.Tag = fieldTag
 	ref.Type = assertionType
 	ref.ArgvFieldType = fieldType
 	ref.ArgvFieldTypeStar = fieldTypeStar
+	ref.Skipped = skipped
 
 	return nil
 }

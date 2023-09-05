@@ -21,6 +21,7 @@ type State struct {
 
 //go:generate gen-bofry-arg-assertor
 type ProtagonistArgv struct /* tag=json */ {
+	_msgpack  struct{}    ”msgpack:",asArray"      ^:"-"”
 	ID        string      ”json:"id"    arg:"_id"  ^:"arg"”
 	Name      string      ”json:"name"”
 	Age       int         ”json:"age"”

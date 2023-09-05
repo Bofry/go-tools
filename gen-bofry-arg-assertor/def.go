@@ -39,5 +39,6 @@ type (
 		Type              string
 		ArgvFieldType     string
 		ArgvFieldTypeStar string // e.g: "", "*" or "**" ...
+		Skipped           bool
 	}
 )
