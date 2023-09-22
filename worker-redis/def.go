@@ -79,7 +79,7 @@ SETLOCAL DisableDelayedExpansion
 
 	FILE_DOCKERFILE          = "Dockerfile"
 	FILE_DOCKERFILE_TEMPLATE = `
-FROM golang:1.19-alpine
+FROM golang:{{.RuntimeVersion}}-alpine
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
@@ -441,6 +441,7 @@ var MessageObserverManager = struct {
 )
 
 type AppMetadata struct {
-	AppExeName    string
-	AppModuleName string
+	RuntimeVersion string
+	AppExeName     string
+	AppModuleName  string
 }
