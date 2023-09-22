@@ -17,7 +17,7 @@ var (
 	_EXPECT_FILE_LOAD_ENV_SH  = FILE_LOAD_ENV_SH_TEMPLATE
 	_EXPECT_FILE_LOAD_ENV_BAT = FILE_LOAD_ENV_BAT_TEMPLATE
 	_EXPECT_FILE_DOCKERFILE   = `
-FROM golang:1.19-alpine
+FROM golang:` + getRuntimeVersion() + `-alpine
 
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH

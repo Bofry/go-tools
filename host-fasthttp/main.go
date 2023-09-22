@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
 	"text/template"
 
@@ -102,9 +104,15 @@ func main() {
 			}
 		}
 
+		runtimeVersion := getRuntimeVersion()
+		if len(runtimeVersion) == 0 {
+			throw("cannot get go version")
+		}
+
 		metadata := AppMetadata{
-			AppModuleName: moduleName,
-			AppExeName:    extractAppExeName(moduleName),
+			RuntimeVersion: runtimeVersion,
+			AppModuleName:  moduleName,
+			AppExeName:     extractAppExeName(moduleName),
 		}
 		err = initProject(&metadata)
 		if err != nil {
@@ -285,6 +293,18 @@ func getModuleName() (string, error) {
 	modName := modfile.ModulePath(goModBytes)
 
 	return modName, nil
+}
+
+func getRuntimeVersion() string {
+	str := runtime.Version()
+	pattern := regexp.MustCompile(`^go(\d+\.\d+)`)
+
+	matches := pattern.FindSubmatch([]byte(str))
+
+	if len(matches) == 2 {
+		return string(matches[1])
+	}
+	return ""
 }
 
 func extractAppExeName(moduleName string) string {
