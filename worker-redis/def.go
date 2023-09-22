@@ -56,6 +56,7 @@ done < $ENV_FILE
 
 	FILE_LOAD_ENV_BAT          = "loadenv.bat"
 	FILE_LOAD_ENV_BAT_TEMPLATE = `@ECHO OFF
+SETLOCAL EnableDelayedExpansion
 
 SET ENV_FILE=.env
 
@@ -72,6 +73,8 @@ FOR /F "tokens=*" %%i in ('type %ENV_FILE%') DO (
 		)
 	)
 )
+
+SETLOCAL DisableDelayedExpansion
 `
 
 	FILE_DOCKERFILE          = "Dockerfile"
@@ -91,7 +94,7 @@ RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && \
 	apk add --no-cache gcc musl-dev && \
 	apk add git && \
 	apk update && \
-	apk upgrade 
+	apk upgrade
 
 # RUN go version
 ADD . $GOPATH/src/app
@@ -386,7 +389,7 @@ func (s *LoggingService) ConfigureLogger(l *log.Logger) {
 	FILE_APP_GO          = "app.go"
 	FILE_APP_GO_TEMPLATE = strings.ReplaceAll(`package main
 
-import (	
+import (
 	. "{{.AppModuleName}}/internal"
 	. "{{.AppModuleName}}/observer"
 

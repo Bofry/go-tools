@@ -148,7 +148,7 @@ COMMANDS:
 
 
 init USAGE:
-  http-fasthttp init [MODULE_NAME] [OPTIONS...]
+  worker-redis init [MODULE_NAME] [OPTIONS...]
 
 init ARGS:
   MODULE_NAME   the go module name for the application.
