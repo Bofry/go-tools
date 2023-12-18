@@ -227,6 +227,10 @@ func initProject(metadata *AppMetadata) error {
 		generateFiles(metadata),
 		generateDir(DIR_CONF),
 		executeCommand("go", "mod", "tidy"),
+		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/trace"),
+		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/sdk"),
+		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/exporters/jaeger"),
+		executeCommand("go", "mod", "tidy"),
 	)
 }
 
