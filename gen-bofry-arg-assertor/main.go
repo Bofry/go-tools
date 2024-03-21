@@ -377,6 +377,12 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 		skipped       bool
 	)
 
+	if field.Tag == nil {
+		ref.Name = fieldName
+		ref.Skipped = true
+		return nil
+	}
+
 	// resolve tag
 	{
 		if field.Tag.Kind == token.STRING {
@@ -390,8 +396,9 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 			if tagname, ok := tag.Lookup(ARGV_FIELD_TAG_DIRECTIVE); ok {
 				if tagname == "" || tagname == ARGV_DASH_TAG_VALUE {
 					skipped = true
+				} else {
+					fieldTag = tag.Get(tagname)
 				}
-				fieldTag = tag.Get(tagname)
 			} else {
 				// use default struct tag name
 				for _, tagname := range tagnames {
@@ -399,6 +406,10 @@ func fillAssertorValueAssertion(ref *AssertorValueAssertion, field *ast.Field, i
 					if v, ok := tag.Lookup(tagname); ok {
 						if strings.HasPrefix(v, "*") {
 							v = v[1:]
+						}
+						if v == ARGV_DASH_TAG_VALUE {
+							skipped = true
+							continue
 						}
 						fieldTag = v
 						break

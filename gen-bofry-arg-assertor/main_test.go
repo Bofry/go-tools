@@ -32,6 +32,7 @@ type ProtagonistArgv struct /* tag=json */ {
 	Token     *arg.Number ”json:"token"”
 	Bounty    float64     ”json:"bounty"”
 	OnStage   bool        ”json:"onstage"”
+	Avatar    string      ”json:"-"”
 }
 `, "”", "`")
 
