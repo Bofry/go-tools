@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -82,10 +81,10 @@ func main() {
 				switch argv {
 				case "-v":
 					if len(os.Args) > pos {
-						// run go get -u -v github.com/Bofry/host-fasthttp@<version>
+						// run go get -v github.com/Bofry/host-fasthttp@<version>
 						argv = os.Args[pos]
 						pos++
-						err = executeCommand("go", "get", "-u", "-v", "github.com/Bofry/host-fasthttp@"+argv)
+						err = executeCommand("go", "get", "-v", "github.com/Bofry/host-fasthttp@"+argv)
 						if err != nil {
 							throw(err.Error())
 							exit(1)
@@ -227,10 +226,6 @@ func initProject(metadata *AppMetadata) error {
 		generateFiles(metadata),
 		generateDir(DIR_CONF),
 		executeCommand("go", "mod", "tidy"),
-		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/trace"),
-		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/sdk"),
-		executeCommand("go", "get", "-u", "go.opentelemetry.io/otel/exporters/jaeger"),
-		executeCommand("go", "mod", "tidy"),
 	)
 }
 
@@ -289,7 +284,7 @@ func generateFile(filename string, pattern string, metadata *AppMetadata) error 
 }
 
 func getModuleName() (string, error) {
-	goModBytes, err := ioutil.ReadFile("go.mod")
+	goModBytes, err := os.ReadFile("go.mod")
 	if err != nil {
 		return "", err
 	}

@@ -188,7 +188,7 @@ func Test(t *testing.T) {
 		"init",
 		"host-fasthttp-demo",
 		"-v",
-		"v0.2.0",
+		"v0.2.7",
 	}
 	// NOTE: avoid painc when call os.Exit() under testing
 	osExit = func(i int) {
