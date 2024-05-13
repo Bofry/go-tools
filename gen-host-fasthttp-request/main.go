@@ -9,7 +9,6 @@ import (
 	"go/printer"
 	"go/token"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -27,6 +26,7 @@ const (
 	REQUEST_MANAGER_TYPE_NAME string = "RequestManager"
 	REQUEST_TYPE_SUFFIX       string = "Request"
 	HANDLER_MODULE_NAME       string = "handler"
+	HANDLER_ARGS_DIR_PATH     string = "handler/args"
 	WEBSOCKET_APP_DIR_PATH    string = "handler/websocket"
 	WEBSOCKET_APP_FILE_NAME   string = "app"
 
@@ -224,16 +224,51 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 				}
 				defer file.Close()
 
+				requestPrefix := strings.TrimSuffix(handlerName, REQUEST_TYPE_SUFFIX)
+
 				switch hijackType {
 				case HIJACK_NONE:
+					requestGetArgvFile, err := createRequestArgvFile(requestPrefix + "GetArgv")
+					if err != nil {
+						if os.IsExist(err) {
+							fmt.Println("skipped")
+						} else {
+							return count, err
+						}
+					}
+					defer requestGetArgvFile.Close()
+
+					requestPostArgvFile, err := createRequestArgvFile(requestPrefix + "PostArgv")
+					if err != nil {
+						if os.IsExist(err) {
+							fmt.Println("skipped")
+						} else {
+							return count, err
+						}
+					}
+					defer requestPostArgvFile.Close()
+
 					writer = &HttpRequestFileWriter{
-						AppModuleName:     appModuleName,
-						HandlerModuleName: HANDLER_MODULE_NAME,
-						RequestName:       handlerName,
-						RequestFile:       file,
+						AppModuleName:       appModuleName,
+						HandlerModuleName:   HANDLER_MODULE_NAME,
+						RequestName:         handlerName,
+						RequestPrefix:       requestPrefix,
+						RequestFile:         file,
+						RequestGetArgvFile:  requestGetArgvFile,
+						RequestPostArgvFile: requestPostArgvFile,
 					}
 
 				case HIJACK_WEBSOCKET:
+					requestGetArgvFile, err := createRequestArgvFile(requestPrefix + "GetArgv")
+					if err != nil {
+						if os.IsExist(err) {
+							fmt.Println("skipped")
+						} else {
+							return count, err
+						}
+					}
+					defer requestGetArgvFile.Close()
+
 					websocketAppModuleName := getWebsocketAppModuleName(handlerName)
 					websocketAppFile, err := createWebsocketAppFile(websocketAppModuleName)
 					if err != nil {
@@ -250,9 +285,11 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 						AppModuleName:          appModuleName,
 						HandlerModuleName:      HANDLER_MODULE_NAME,
 						RequestName:            handlerName,
+						RequestPrefix:          requestPrefix,
 						WebsocketAppModuleName: websocketAppModuleName,
 						RequestFile:            file,
 						WebsocketAppFile:       websocketAppFile,
+						RequestGetArgvFile:     requestGetArgvFile,
 					}
 				}
 
@@ -323,6 +360,15 @@ func createFile(filename string, handlerDir string) (*os.File, error) {
 	return nil, os.ErrExist
 }
 
+func createRequestArgvFile(requestArgvName string) (*os.File, error) {
+	argvDir := HANDLER_ARGS_DIR_PATH
+	if err := os.MkdirAll(argvDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	return createFile(requestArgvName, argvDir)
+}
+
 func createWebsocketAppFile(websocketAppModuleName string) (*os.File, error) {
 	websocketAppDir := path.Join(WEBSOCKET_APP_DIR_PATH, websocketAppModuleName)
 	if err := os.MkdirAll(websocketAppDir, os.ModePerm); err != nil {
@@ -353,7 +399,7 @@ func importHandlerModulePath(fset *token.FileSet, f *ast.File) error {
 }
 
 func getAppModuleName() (string, error) {
-	goModBytes, err := ioutil.ReadFile("go.mod")
+	goModBytes, err := os.ReadFile("go.mod")
 	if err != nil {
 		return "", err
 	}

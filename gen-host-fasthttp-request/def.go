@@ -6,17 +6,77 @@ import (
 )
 
 var (
-	TEMPLATE_NAME_REQUEST_FILE       string = "RequestFile"
-	TEMPLATE_NAME_WEBSOCKET_APP_FILE string = "WebsocketAppFile"
+	TEMPLATE_NAME_REQUEST_FILE           string = "RequestFile"
+	TEMPLATE_NAME_REQUEST_GET_ARGV_FILE  string = "RequestGetArgvFile"
+	TEMPLATE_NAME_REQUEST_POST_ARGV_FILE string = "RequestPostArgvFile"
+	TEMPLATE_NAME_WEBSOCKET_APP_FILE     string = "WebsocketAppFile"
+
+	HTTP_REQUEST_GET_ARGV_FILE_TEMPLATE string = strings.ReplaceAll(`package args
+
+import (
+	"github.com/Bofry/arg"
+	"github.com/Bofry/httparg"
+)
+
+var (
+	_ httparg.Validatable = new({{.RequestPrefix}}GetArgv)
+)
+
+//go:generate gen-bofry-arg-assertor
+type {{.RequestPrefix}}GetArgv struct /* tag=query */ {
+	Nonce *string ”query:"nonce"”
+}
+
+// Validate implements httparg.Validatable.
+func (argv *{{.RequestPrefix}}GetArgv) Validate() error {
+	v := argv.Assertor()
+
+	err := arg.Assert(
+		v.Nonce(arg.StringPtr.NonEmpty),
+	)
+	return err
+}
+`, "”", "`")
+
+	HTTP_REQUEST_POST_ARGV_FILE_TEMPLATE string = strings.ReplaceAll(`package args
+
+import (
+	"github.com/Bofry/arg"
+	"github.com/Bofry/httparg"
+)
+
+var (
+	_ httparg.Validatable = new({{.RequestPrefix}}PostArgv)
+)
+
+//go:generate gen-bofry-arg-assertor
+type {{.RequestPrefix}}PostArgv struct /* tag=json */ {
+	Nonce *string ”query:"nonce"   ^:"query"”
+	Text  string  ”json:"*text"”
+}
+
+// Validate implements httparg.Validatable.
+func (argv *{{.RequestPrefix}}PostArgv) Validate() error {
+	v := argv.Assertor()
+
+	err := arg.Assert(
+		v.Nonce(arg.StringPtr.NonEmpty),
+		v.Text(arg.Strings.NonEmpty),
+	)
+	return err
+}
+`, "”", "`")
 
 	HTTP_REQUEST_FILE_TEMPLATE string = `package {{.HandlerModuleName}}
 
 import (
 	"log"
+	"{{.AppModuleName}}/handler/args"
 	. "{{.AppModuleName}}/internal"
 
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/tracing"
+	"github.com/Bofry/httparg"
 	"github.com/valyala/fasthttp"
 )
 
@@ -32,6 +92,26 @@ func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
 	sp := tracing.SpanFromRequestCtx(ctx)
 	_ = sp
 
+	argv := args.{{.RequestPrefix}}GetArgv{}
+
+	httparg.Args(&argv).
+		ProcessQueryString(ctx.QueryArgs().String()).
+		Validate()
+
+	response.Text.Success(ctx, "OK")
+}
+
+func (r *{{.RequestName}}) Post(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	_ = sp
+
+	argv := args.{{.RequestPrefix}}PostArgv{}
+
+	httparg.Args(&argv).
+		ProcessQueryString(ctx.QueryArgs().String()).
+		ProcessContent(ctx.PostBody(), string(ctx.Request.Header.ContentType())).
+		Validate()
+
 	response.Text.Success(ctx, "OK")
 }
 `
@@ -41,6 +121,7 @@ func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
 import (
 	"context"
 	"log"
+	"{{.AppModuleName}}/handler/args"
 	"{{.AppModuleName}}/handler/websocket/{{.WebsocketAppModuleName}}"
 	. "{{.AppModuleName}}/internal"
 
@@ -48,6 +129,7 @@ import (
 	"github.com/Bofry/host-fasthttp/response"
 	"github.com/Bofry/host-fasthttp/tracing"
 	"github.com/Bofry/host/app"
+	"github.com/Bofry/httparg"
 	"github.com/valyala/fasthttp"
 )
 
@@ -77,6 +159,12 @@ func (r *{{.RequestName}}) Init() {
 func (r *{{.RequestName}}) Get(ctx *fasthttp.RequestCtx) {
 	sp := tracing.SpanFromRequestCtx(ctx)
 	_ = sp
+
+	argv := args.{{.RequestPrefix}}GetArgv{}
+
+	httparg.Args(&argv).
+		ProcessQueryString(ctx.QueryArgs().String()).
+		Validate()
 
 	client := websocket.NewMessageClient(ctx)
 	client.RegisterCloseHandler(func(mc app.MessageClient) {
@@ -167,6 +255,14 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
+		tmpl, err = tmpl.New(TEMPLATE_NAME_REQUEST_GET_ARGV_FILE).Parse(HTTP_REQUEST_GET_ARGV_FILE_TEMPLATE)
+		if err != nil {
+			panic(err)
+		}
+		tmpl, err = tmpl.New(TEMPLATE_NAME_REQUEST_POST_ARGV_FILE).Parse(HTTP_REQUEST_POST_ARGV_FILE_TEMPLATE)
+		if err != nil {
+			panic(err)
+		}
 		HttpRequestFileTemplate = tmpl
 	}
 
@@ -175,7 +271,14 @@ func init() {
 		if err != nil {
 			panic(err)
 		}
+		tmpl, err = tmpl.New(TEMPLATE_NAME_REQUEST_GET_ARGV_FILE).Parse(HTTP_REQUEST_GET_ARGV_FILE_TEMPLATE)
+		if err != nil {
+			panic(err)
+		}
 		tmpl, err = tmpl.New(TEMPLATE_NAME_WEBSOCKET_APP_FILE).Parse(WEBSOCKET_APP_FILE_TEMPLATE)
+		if err != nil {
+			panic(err)
+		}
 		WebsocketRequestFileTemplate = tmpl
 	}
 }
