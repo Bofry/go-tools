@@ -32,6 +32,7 @@ type ProtagonistArgv struct /* tag=json */ {
 	Token     *arg.Number ”json:"token"”
 	Bounty    float64     ”json:"bounty"”
 	OnStage   bool        ”json:"onstage"”
+	Credit    arg.Decimal ”json:"credit"”
 	Avatar    string      ”json:"-"”
 }
 `, "”", "`")
@@ -112,6 +113,12 @@ func (assertor *ProtagonistArgvAssertor) Token(validators ...arg.NumberPtrValida
 
 func (assertor *ProtagonistArgvAssertor) Bounty(validators ...arg.FloatValidator) error {
 	return arg.Floats.Assert(assertor.argv.Bounty, "bounty",
+		validators...,
+	)
+}
+
+func (assertor *ProtagonistArgvAssertor) Credit(validators ...arg.DecimalValidator) error {
+	return arg.Decimals.Assert(assertor.argv.Credit, "credit",
 		validators...,
 	)
 }

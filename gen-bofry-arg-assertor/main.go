@@ -178,6 +178,7 @@ func parseStructTagNamesAnnotation(key string, structType *ast.StructType, comme
 
 			var tag string = comment.Text()
 
+			fmt.Println(tag)
 			for tag != "" {
 				// Skip leading space.
 				i := 0
@@ -215,16 +216,10 @@ func parseStructTagNamesAnnotation(key string, structType *ast.StructType, comme
 				name := string(tag[:i])
 				tag = tag[i+1:]
 
-				for i < len(tag) && tag[i] != '\n' && tag[i] != ' ' {
-					i++
-				}
-				if i >= len(tag) {
-					break
-				}
-				text := string(tag[:i])
+				source := strings.TrimSpace(tag)
 
 				if key == name {
-					return strings.Split(text, ",")
+					return strings.Split(source, ",")
 				}
 			}
 
@@ -256,6 +251,11 @@ func findAssertionType(ident *ast.Ident, info *types.Info, ptr bool) string {
 				return NUMBER_PTR_ASSERTION_TYPE
 			}
 			return NUMBER_ASSERTION_TYPE
+		case "github.com/shopspring/decimal.Decimal":
+			if ptr {
+				return DECIMAL_PTR_ASSERTION_TYPE
+			}
+			return DECIMAL_ASSERTION_TYPE
 		case "net.IP":
 			return IP_ASSERTION_TYPE
 		case "string":
