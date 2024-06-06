@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	ARGV_TYPE_SUFFIX          string = "Argv"
-	ARGV_FIELD_TAG_DIRECTIVE  string = "^"
-	ARGV_DASH_TAG_VALUE       string = "-"
-	ARGV_STRUCT_TAG_DIRECTIVE string = "tag"
-	ARGV_ASSERTOR_TYPE_SUFFIX string = "Assertor"
+	ARGV_TYPE_SUFFIX             string = "Argv"
+	ARGV_FIELD_TAG_DIRECTIVE     string = "^"
+	ARGV_DASH_TAG_VALUE          string = "-"
+	ARGV_STRUCT_TAG_DIRECTIVE    string = "tag"
+	ARGV_STRUCT_ARGTAG_DIRECTIVE string = "argtag"
+	ARGV_ASSERTOR_TYPE_SUFFIX    string = "Assertor"
 )
 
 var (
@@ -312,17 +313,35 @@ func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
 						)
 
 						if argvTypeRegexp.MatchString(structName) {
+							tagnames := parseStructTagNamesAnnotation(ARGV_STRUCT_TAG_DIRECTIVE, typeExpr, f.Comments)
+
 							assertorType := &AssertorType{
 								SourceTypeName: structName,
 								Name:           structName + ARGV_ASSERTOR_TYPE_SUFFIX,
 							}
 
-							err := fillAssertorType(assertorType, typeExpr, info, f.Comments)
+							err := fillAssertorType(assertorType, typeExpr, info, tagnames)
 							if err != nil {
 								return err
 							}
 
 							assertorTypes = append(assertorTypes, assertorType)
+						} else {
+							tagnames := parseStructTagNamesAnnotation(ARGV_STRUCT_ARGTAG_DIRECTIVE, typeExpr, f.Comments)
+							if len(tagnames) > 0 {
+								assertorType := &AssertorType{
+									SourceTypeName: structName,
+									Name:           structName + ARGV_ASSERTOR_TYPE_SUFFIX,
+								}
+
+								err := fillAssertorType(assertorType, typeExpr, info, tagnames)
+								if err != nil {
+									return err
+								}
+
+								assertorTypes = append(assertorTypes, assertorType)
+								continue
+							}
 						}
 					default:
 						// ignore
@@ -338,10 +357,9 @@ func fillAssertorFile(ref *AssertorFile, f *ast.File, info *types.Info) error {
 	return nil
 }
 
-func fillAssertorType(ref *AssertorType, structType *ast.StructType, info *types.Info, comments []*ast.CommentGroup) error {
+func fillAssertorType(ref *AssertorType, structType *ast.StructType, info *types.Info, tagnames []string) error {
 	var (
 		assertions []*AssertorValueAssertion
-		tagnames   = parseStructTagNamesAnnotation(ARGV_STRUCT_TAG_DIRECTIVE, structType, comments)
 	)
 
 	// traverse all fields
