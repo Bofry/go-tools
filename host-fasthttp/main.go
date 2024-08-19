@@ -225,6 +225,7 @@ func initProject(metadata *AppMetadata) error {
 	return do(
 		generateFiles(metadata),
 		generateDir(DIR_CONF),
+		executeCommand("go", "get", "go.opentelemetry.io/otel@v1.16.0"),
 		executeCommand("go", "mod", "tidy"),
 	)
 }
