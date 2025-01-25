@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var (
@@ -20,14 +21,24 @@ func main() {
 	flag := shift(&pos)
 	switch flag {
 	case "-f":
+		// rungo -f .env [-args....]
 		args = append(args, flag, shift(&pos))
 		args = append(args, "go", "run")
 		args = append(args, arguments(&pos)...)
 	case ".":
-		// skip
-	default:
+		// rungo . [-args....]
 		args = append(args, "go", "run", flag)
 		args = append(args, arguments(&pos)...)
+	default:
+		if strings.HasPrefix(flag, "-") {
+			// rungo [-args....]
+			args = append(args, "go", "run", ".", flag)
+			args = append(args, arguments(&pos)...)
+		} else {
+			// rungo file [-args....]
+			args = append(args, "go", "run", flag)
+			args = append(args, arguments(&pos)...)
+		}
 	}
 
 	err := executeCommand(args[0], args[1:]...)
