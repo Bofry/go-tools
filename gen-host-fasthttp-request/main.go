@@ -26,10 +26,11 @@ const (
 	REQUEST_MANAGER_TYPE_NAME string = "RequestManager"
 	REQUEST_TYPE_SUFFIX       string = "Request"
 	HANDLER_MODULE_NAME       string = "handler"
-	HANDLER_ARGS_DIR_PATH     string = "handler/args"
-	WEBSOCKET_APP_DIR_PATH    string = "handler/websocket"
+	HANDLER_ARGS_DIR_PATH     string = "args"
+	WEBSOCKET_APP_DIR_PATH    string = "websocket"
 	WEBSOCKET_APP_FILE_NAME   string = "app"
 
+	TAG_SKIP_OPT_NAME   string = "@skip"
 	TAG_HIJACK_OPT_NAME string = "@hijack"
 
 	HIJACK_NONE      string = ""
@@ -101,14 +102,15 @@ func main() {
 					// find RequestManager type
 					if structTypeName == REQUEST_MANAGER_TYPE_NAME {
 						var (
-							count int
-							err   error
+							count       int
+							err         error
+							subPackages []string
 						)
 
 						switch typeSpec.Type.(type) {
 						case *ast.StructType:
 							structType := typeSpec.Type.(*ast.StructType)
-							count, err = generateRequestFiles(structType, HANDLER_MODULE_NAME)
+							count, subPackages, err = generateRequestFiles(structType, HANDLER_MODULE_NAME)
 							if err != nil {
 								throw(err.Error())
 								exit(1)
@@ -117,7 +119,7 @@ func main() {
 
 						if count > 0 {
 							// import handler module path
-							err := importHandlerModulePath(fset, f)
+							err := importHandlerModulePath(fset, f, subPackages)
 							if err != nil {
 								throw(err.Error())
 								exit(1)
@@ -153,14 +155,21 @@ func exit(code int) {
 	osExit(code)
 }
 
-func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int, err error) {
+func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int, subPackages []string, err error) {
+	type fileOpt struct {
+		packageName string
+		hijackType  string
+		requestName string
+	}
+
 	var (
-		handlerFileMap = make(map[string]string, len(structType.Fields.List))
+		handlerFileMap    = make(map[string]fileOpt, len(structType.Fields.List))
+		handlerPackageMap = make(map[string]bool)
 	)
 
 	for _, field := range structType.Fields.List {
 		var (
-			hijackType string = ""
+			opt fileOpt
 		)
 
 		// resolve tag
@@ -170,28 +179,64 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 				tagLiteral = field.Tag.Value
 			}
 			tag := reflect.StructTag(tagLiteral)
-			val, ok := tag.Lookup(TAG_HIJACK_OPT_NAME)
-			if ok {
-				hijackType = val
+
+			// has @skip
+			{
+				val, ok := tag.Lookup(TAG_SKIP_OPT_NAME)
+				if ok {
+					if len(val) == 0 || val == "on" {
+						continue
+					}
+				}
+			}
+			// has @hijack?
+			{
+				val, ok := tag.Lookup(TAG_HIJACK_OPT_NAME)
+				if ok {
+					opt.hijackType = val
+				}
 			}
 		}
 
 		switch field.Type.(type) {
 		case *ast.StarExpr:
 			star := field.Type.(*ast.StarExpr)
-			ident, ok := star.X.(*ast.Ident)
-			if ok {
-				requestTypename := ident.Name
 
-				if existedTypeName, ok := handlerFileMap[requestTypename]; ok {
-					// NOTE: it have not to be happen.
-					throw(fmt.Sprintf("output file '%s' is ambiguous on request type name '%s' and '%s'",
-						requestTypename,
-						existedTypeName,
-						requestTypename))
-					exit(1)
+			switch star.X.(type) {
+			case *ast.SelectorExpr:
+				sel := star.X.(*ast.SelectorExpr)
+
+				opt.requestName = sel.Sel.Name
+				// parse package name
+				{
+					ident, ok := sel.X.(*ast.Ident)
+					if !ok {
+						// NOTE: it have not to be happen.
+						throw(fmt.Sprintf("cannot resolve request package name at '%d'", star.X.Pos()))
+						exit(1)
+					}
+					opt.packageName = ident.Name
 				}
-				handlerFileMap[requestTypename] = hijackType
+
+				// generate requestTypename
+				requestTypename := opt.packageName + "." + opt.requestName
+				// duplicated request name?
+				if _, ok := handlerFileMap[requestTypename]; ok {
+					continue
+				}
+				handlerFileMap[requestTypename] = opt
+			case *ast.Ident:
+				ident := star.X.(*ast.Ident)
+
+				opt.requestName = ident.Name
+
+				// generate requestTypename
+				requestTypename := ident.Name
+				// duplicated request name?
+				if _, ok := handlerFileMap[requestTypename]; ok {
+					continue
+				}
+				handlerFileMap[requestTypename] = opt
 			}
 		}
 	}
@@ -202,90 +247,108 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 			os.Mkdir(handlerDir, os.ModePerm)
 		}
 
-		for handlerName, hijackType := range handlerFileMap {
+		for name, opt := range handlerFileMap {
 			var (
-				filename = getHandlerFileName(handlerName)
+				packageDir   = handlerDir
+				packageName  = handlerDir
+				filename     = getHandlerFileName(opt.requestName)
+				isSubPackage = false
 			)
+
+			if len(opt.packageName) > 0 {
+				packageDir = path.Join(handlerDir, opt.packageName)
+				if _, err := os.Stat(packageDir); os.IsNotExist(err) {
+					os.Mkdir(packageDir, os.ModePerm)
+				}
+				packageName = opt.packageName
+				isSubPackage = true
+
+				// collect sub package name as wall
+				handlerPackageMap[opt.packageName] = true
+			}
+
 			if len(filename) > 0 {
 				var (
 					writer FileWriter = nil
 				)
 
-				fmt.Printf("generating '%s' ...", handlerName)
+				fmt.Printf("generating '%s' ...", name)
 
-				file, err := createFile(filename, handlerDir)
+				file, err := createFile(filename, packageDir)
 				if err != nil {
 					if os.IsExist(err) {
 						fmt.Println("skipped")
 						continue
 					} else {
-						return count, err
+						return 0, nil, err
 					}
 				}
 				defer file.Close()
 
-				requestPrefix := strings.TrimSuffix(handlerName, REQUEST_TYPE_SUFFIX)
+				requestPrefix := strings.TrimSuffix(opt.requestName, REQUEST_TYPE_SUFFIX)
 
-				switch hijackType {
+				switch opt.hijackType {
 				case HIJACK_NONE:
-					requestGetArgvFile, err := createRequestArgvFile(requestPrefix + "GetArgv")
+					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"GetArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
 						} else {
-							return count, err
+							return 0, nil, err
 						}
 					}
 					defer requestGetArgvFile.Close()
 
-					requestPostArgvFile, err := createRequestArgvFile(requestPrefix + "PostArgv")
+					requestPostArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"PostArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
 						} else {
-							return count, err
+							return 0, nil, err
 						}
 					}
 					defer requestPostArgvFile.Close()
 
 					writer = &HttpRequestFileWriter{
 						AppModuleName:       appModuleName,
-						HandlerModuleName:   HANDLER_MODULE_NAME,
-						RequestName:         handlerName,
+						RequestPackageName:  packageName,
+						RequestName:         opt.requestName,
 						RequestPrefix:       requestPrefix,
+						IsSubRequestPackage: isSubPackage,
 						RequestFile:         file,
 						RequestGetArgvFile:  requestGetArgvFile,
 						RequestPostArgvFile: requestPostArgvFile,
 					}
 
 				case HIJACK_WEBSOCKET:
-					requestGetArgvFile, err := createRequestArgvFile(requestPrefix + "GetArgv")
+					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"GetArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
 						} else {
-							return count, err
+							return 0, nil, err
 						}
 					}
 					defer requestGetArgvFile.Close()
 
-					websocketAppModuleName := getWebsocketAppModuleName(handlerName)
-					websocketAppFile, err := createWebsocketAppFile(websocketAppModuleName)
+					websocketAppModuleName := getWebsocketAppModuleName(opt.requestName)
+					websocketAppFile, err := createWebsocketAppFile(packageDir, websocketAppModuleName)
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
 							continue
 						} else {
-							return count, err
+							return 0, nil, err
 						}
 					}
 					defer websocketAppFile.Close()
 
 					writer = &WebsocketRequestFileWriter{
 						AppModuleName:          appModuleName,
-						HandlerModuleName:      HANDLER_MODULE_NAME,
-						RequestName:            handlerName,
+						RequestPackageName:     packageName,
+						RequestName:            opt.requestName,
 						RequestPrefix:          requestPrefix,
+						IsSubRequestPackage:    isSubPackage,
 						WebsocketAppModuleName: websocketAppModuleName,
 						RequestFile:            file,
 						WebsocketAppFile:       websocketAppFile,
@@ -308,7 +371,15 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 			}
 		}
 	}
-	return count, nil
+
+	// export subPackages
+	if len(handlerPackageMap) > 0 {
+		subPackages = make([]string, 0, len(handlerPackageMap))
+		for k, _ := range handlerPackageMap {
+			subPackages = append(subPackages, k)
+		}
+	}
+	return count, subPackages, nil
 }
 
 // Normalize the handler type name to file name.
@@ -360,8 +431,8 @@ func createFile(filename string, handlerDir string) (*os.File, error) {
 	return nil, os.ErrExist
 }
 
-func createRequestArgvFile(requestArgvName string) (*os.File, error) {
-	argvDir := HANDLER_ARGS_DIR_PATH
+func createRequestArgvFile(dir, requestArgvName string) (*os.File, error) {
+	argvDir := path.Join(dir, HANDLER_ARGS_DIR_PATH)
 	if err := os.MkdirAll(argvDir, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -369,8 +440,8 @@ func createRequestArgvFile(requestArgvName string) (*os.File, error) {
 	return createFile(requestArgvName, argvDir)
 }
 
-func createWebsocketAppFile(websocketAppModuleName string) (*os.File, error) {
-	websocketAppDir := path.Join(WEBSOCKET_APP_DIR_PATH, websocketAppModuleName)
+func createWebsocketAppFile(dir, websocketAppModuleName string) (*os.File, error) {
+	websocketAppDir := path.Join(dir, WEBSOCKET_APP_DIR_PATH, websocketAppModuleName)
 	if err := os.MkdirAll(websocketAppDir, os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -378,12 +449,26 @@ func createWebsocketAppFile(websocketAppModuleName string) (*os.File, error) {
 	return createFile(WEBSOCKET_APP_FILE_NAME, websocketAppDir)
 }
 
-func importHandlerModulePath(fset *token.FileSet, f *ast.File) error {
+func importHandlerModulePath(fset *token.FileSet, f *ast.File, subPackages []string) error {
+	var (
+		shouldUpdateImpoty bool
+	)
 
-	handlerModulePath := appModuleName + "/" + HANDLER_MODULE_NAME
-
-	ok := astutil.AddNamedImport(fset, f, ".", handlerModulePath)
-	if ok {
+	{
+		handlerModulePath := appModuleName + "/" + HANDLER_MODULE_NAME
+		ok := astutil.AddNamedImport(fset, f, ".", handlerModulePath)
+		if ok {
+			shouldUpdateImpoty = ok
+		}
+	}
+	for _, name := range subPackages {
+		handlerModulePath := appModuleName + "/" + HANDLER_MODULE_NAME + "/" + name
+		ok := astutil.AddImport(fset, f, handlerModulePath)
+		if ok {
+			shouldUpdateImpoty = ok
+		}
+	}
+	if shouldUpdateImpoty {
 		stream, err := os.OpenFile(gofile, os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 		if err != nil {
 			return err

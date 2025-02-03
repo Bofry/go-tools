@@ -67,11 +67,11 @@ func (argv *{{.RequestPrefix}}PostArgv) Validate() error {
 }
 `, "”", "`")
 
-	HTTP_REQUEST_FILE_TEMPLATE string = `package {{.HandlerModuleName}}
+	HTTP_REQUEST_FILE_TEMPLATE string = `package {{.RequestPackageName}}
 
 import (
 	"log"
-	"{{.AppModuleName}}/handler/args"
+	"{{.AppModuleName}}/handler{{if .IsSubRequestPackage}}/{{.RequestPackageName}}{{end}}/args"
 	. "{{.AppModuleName}}/internal"
 
 	"github.com/Bofry/host-fasthttp/response"
@@ -116,7 +116,7 @@ func (r *{{.RequestName}}) Post(ctx *fasthttp.RequestCtx) {
 }
 `
 
-	WEBSOCKET_REQUEST_FILE_TEMPLATE string = `package {{.HandlerModuleName}}
+	WEBSOCKET_REQUEST_FILE_TEMPLATE string = `package {{.RequestPackageName}}
 
 import (
 	"context"

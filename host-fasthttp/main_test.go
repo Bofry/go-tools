@@ -128,7 +128,7 @@ import (
 type RequestManager struct {
 	/* put your request handler below */
 	// *RootRequest ”url:"/"”
-	*handlers.HealthCheckRequest ”url:"/healthcheck"”
+	*handlers.HealthCheckRequest ”url:"/healthcheck"     @skip:"on"”
 }
 
 func main() {

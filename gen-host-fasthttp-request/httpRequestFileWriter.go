@@ -7,10 +7,11 @@ import (
 var _ FileWriter = new(HttpRequestFileWriter)
 
 type HttpRequestFileWriter struct {
-	AppModuleName     string
-	HandlerModuleName string
-	RequestName       string
-	RequestPrefix     string
+	AppModuleName       string
+	RequestPackageName  string
+	IsSubRequestPackage bool
+	RequestName         string
+	RequestPrefix       string
 
 	RequestFile         io.Writer
 	RequestGetArgvFile  io.Writer

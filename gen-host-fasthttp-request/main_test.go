@@ -24,8 +24,10 @@ require (
 //go:generate gen-host-fasthttp-request
 type RequestManager struct {
 	/* put your request handler here */
-	*HealthCheckRequest ”url:"/healthcheck"”
-	*ChatRequest        ”url:"/chat"         @hijack:"websocket"”
+	*payment.PayinRequest ”url:"/payment/payin"”
+	*HealthCheckRequest   ”url:"/healthcheck"”
+	*ChatRequest          ”url:"/chat"           @hijack:"websocket"”
+	*NopRequest           ”url:"/?"              @skip:"on"”
 }
 
 func main() {}
@@ -38,17 +40,71 @@ type ServiceProvider struct{}
 
 	_EXPECT_FILE_APP_GO = strings.ReplaceAll(`package main
 
-import . "host-fasthttp-request-demo/handler"
+import (
+	. "host-fasthttp-request-demo/handler"
+	"host-fasthttp-request-demo/handler/payment"
+)
 
 //go:generate gen-host-fasthttp-request
 type RequestManager struct {
 	/* put your request handler here */
-	*HealthCheckRequest ”url:"/healthcheck"”
-	*ChatRequest        ”url:"/chat"         @hijack:"websocket"”
+	*payment.PayinRequest ”url:"/payment/payin"”
+	*HealthCheckRequest   ”url:"/healthcheck"”
+	*ChatRequest          ”url:"/chat"           @hijack:"websocket"”
+	*NopRequest           ”url:"/?"              @skip:"on"”
 }
 
 func main() {}
 `, "”", "`")
+
+	_EXPECT_FILE_PAYMENT_PAYIN_REQUEST_GO = `package payment
+
+import (
+	"log"
+	"host-fasthttp-request-demo/handler/payment/args"
+	. "host-fasthttp-request-demo/internal"
+
+	"github.com/Bofry/host-fasthttp/response"
+	"github.com/Bofry/host-fasthttp/tracing"
+	"github.com/Bofry/httparg"
+	"github.com/valyala/fasthttp"
+)
+
+type PayinRequest struct {
+	ServiceProvider *ServiceProvider
+}
+
+func (r *PayinRequest) Init() {
+	r.ServiceProvider.ConfigureLogger(log.Default())
+}
+
+func (r *PayinRequest) Get(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	_ = sp
+
+	argv := args.PayinGetArgv{}
+
+	httparg.Args(&argv).
+		ProcessQueryString(ctx.QueryArgs().String()).
+		Validate()
+
+	response.Text.Success(ctx, "OK")
+}
+
+func (r *PayinRequest) Post(ctx *fasthttp.RequestCtx) {
+	sp := tracing.SpanFromRequestCtx(ctx)
+	_ = sp
+
+	argv := args.PayinPostArgv{}
+
+	httparg.Args(&argv).
+		ProcessQueryString(ctx.QueryArgs().String()).
+		ProcessContent(ctx.PostBody(), string(ctx.Request.Header.ContentType())).
+		Validate()
+
+	response.Text.Success(ctx, "OK")
+}
+`
 
 	_EXPECT_FILE_HEALTHCHECK_REQUEST_GO = `package handler
 
@@ -255,6 +311,16 @@ func Test(t *testing.T) {
 		expectedContent := _EXPECT_FILE_APP_GO
 		if expectedContent != string(content) {
 			t.Errorf("app.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
+		}
+	}
+	{
+		content, err := readFile(tmp, "payinRequest.go", "handler/payment")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expectedContent := _EXPECT_FILE_PAYMENT_PAYIN_REQUEST_GO
+		if expectedContent != string(content) {
+			t.Errorf("payinRequest.go expect:\n%s\ngot:\n%s\n", expectedContent, string(content))
 		}
 	}
 	{

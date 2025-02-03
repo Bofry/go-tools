@@ -6,9 +6,10 @@ var _ FileWriter = new(WebsocketRequestFileWriter)
 
 type WebsocketRequestFileWriter struct {
 	AppModuleName          string
-	HandlerModuleName      string
+	RequestPackageName     string
 	RequestName            string
 	RequestPrefix          string
+	IsSubRequestPackage    bool
 	WebsocketAppModuleName string
 
 	RequestFile        io.Writer
