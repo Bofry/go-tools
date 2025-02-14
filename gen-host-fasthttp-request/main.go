@@ -286,10 +286,11 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 				defer file.Close()
 
 				requestPrefix := strings.TrimSuffix(opt.requestName, REQUEST_TYPE_SUFFIX)
+				requestArgFilenamePrefix := normalizeFileName(requestPrefix)
 
 				switch opt.hijackType {
 				case HIJACK_NONE:
-					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"GetArgv")
+					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestArgFilenamePrefix+"GetArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
@@ -299,7 +300,7 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 					}
 					defer requestGetArgvFile.Close()
 
-					requestPostArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"PostArgv")
+					requestPostArgvFile, err := createRequestArgvFile(packageDir, requestArgFilenamePrefix+"PostArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
@@ -321,7 +322,7 @@ func generateRequestFiles(structType *ast.StructType, handlerDir string) (n int,
 					}
 
 				case HIJACK_WEBSOCKET:
-					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestPrefix+"GetArgv")
+					requestGetArgvFile, err := createRequestArgvFile(packageDir, requestArgFilenamePrefix+"GetArgv")
 					if err != nil {
 						if os.IsExist(err) {
 							fmt.Println("skipped")
